@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MicroWeb API Usage Example</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>MicroWeb API Demo</h1>
+      <h1>Hello from MicroWeb!</h1>
+    <p>ESP32 web server running MicroPython. Test App</p>
+   <ul>
+    <li><a href="/submit">Submit Form Example</a></li>
+</ul>
+    <button onclick="getStatus()">Get Status</button>
+    <pre id="statusResult"></pre>
+
+    <button onclick="postEcho()">POST Echo</button>
+    <pre id="echoResult"></pre>
+
+    <script>
+        function getStatus() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('statusResult').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function postEcho() {
+            fetch('/api/echo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({hello: "world"})
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('echoResult').textContent = JSON.stringify(data, null, 2);
+            });
+        }
+    </script>
+</body>
+</html>
