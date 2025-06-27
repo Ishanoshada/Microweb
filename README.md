@@ -62,6 +62,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 - [Example Usage](#example-usage)
     - [Minimal Example (`tests/2/app.py`)](#minimal-example-tests2apppy)
     - [Static Files and Templates Example (`tests/1/app.py`)](#static-files-and-templates-example-tests1apppy)
+    - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
 - [Wi-Fi Configuration](#wi-fi-configuration)
 - [Accessing the Web Server](#accessing-the-web-server)
 - [CLI Tool Usage Examples](#cli-tool-usage-examples)
@@ -71,7 +72,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 - [Contributing](#contributing)
 - [License](#license)
 
-
+![example](/src/img.jpg)
 
 ## Features
 
@@ -84,7 +85,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 - **MicroPython Detection**: Verifies MicroPython before running scripts.
 - **Easy Cleanup**: Remove all files from the ESP32 home directory using `microweb remove --port COM10 --remove`—try this if you need to reset or clean up your device.
 
-![uml](/uml.svg)
+![uml](/src/uml.svg)
 
 ---
 ## Installation
@@ -106,11 +107,10 @@ pip install .
 
 > **Note:** The workspace does not contain a git repository. If you want to contribute or track changes, initialize one with `git init`.
 
+
 ---
 
 ## Usage
-
-### Flashing the ESP32
 
 Flash MicroPython and MicroWeb:
 
@@ -118,8 +118,19 @@ Flash MicroPython and MicroWeb:
 microweb flash --port COM10
 ```
 
-- Erases the ESP32 flash (if `--erase` is used).
-- Uploads core files (`boot.py`, `main.py`, `microweb.py`, `wifi.py`, and all static files).
+#### Options:
+
+* `--erase`
+  Erase the entire flash memory before flashing firmware.
+
+* `--esp8266`
+  Flash ESP8266 firmware instead of the default ESP32.
+
+* `--firmware firmware.bin`
+  Use a custom `.bin` firmware file. This overrides the default firmware for ESP32 or ESP8266 ( any ).
+
+
+
 
 ---
 
@@ -131,14 +142,34 @@ Upload and run a MicroPython script:
 microweb run app.py --port COM10
 ```
 
-After running `app.run()`, the ESP32 will host a Wi-Fi access point (AP) if it cannot connect to a configured network. You can then connect your device to this AP and access the web server using the ESP32's IP address (typically `http://192.168.4.1` in AP mode).
-
-
-- Validates the `.py` file and checks for MicroPython.
+- Validates your `.py` file and checks for MicroPython on the device.
 - Uploads and executes the script.
+- Checks and uploads only changed files by default.
 - Prompts to run `microweb flash` if MicroPython is not detected.
+- After running `app.run()`, the ESP32 will host a Wi-Fi access point (AP) if it cannot connect to a configured network. You can then connect your device to this AP and access the web server using the ESP32's IP address (typically `http://192.168.4.1` in AP mode).
 
 ---
+
+### Boot Script Management
+
+You can configure your ESP32 to automatically start your application after any power cycle or reset by managing the `boot.py` file:
+
+- **Add boot script (auto-run on power-up):**
+    ```bash
+    microweb run app.py --add-boot --port COM10
+    ```
+    This uploads a `boot.py` that will auto-run your app every time the ESP32 is powered on or reset. After upload, you can disconnect the ESP32 from your computer and power it from any source; the server will start automatically.
+
+- **Remove boot script:**
+    ```bash
+    microweb run app.py --remove-boot --port COM10
+    ```
+    This removes the `boot.py` file, so your app will not auto-run on power-up.
+
+---
+
+
+
 
 ## Example Usage
 
@@ -229,6 +260,21 @@ app.run()
 
 ---
 
+### Portfolio Demo (`tests/portfolio/`)
+
+The `tests/portfolio/` directory contains a full-featured portfolio web app built with MicroWeb, demonstrating:
+
+- Multi-page routing (`/`, `/about`, `/projects`, `/contact`)
+- Dynamic template rendering with variables
+- Static assets (CSS, JS, images)
+- API endpoints (e.g., `/api/info` returns JSON)
+- Responsive, animated UI using HTML/CSS/JS
+- Example of serving a personal portfolio from an ESP32
+
+See `tests/portfolio/app.py` and the `static/` folder for a complete, ready-to-deploy example.
+
+---
+
 ## Wi-Fi Configuration
 
 Configure Wi-Fi via:
@@ -297,6 +343,7 @@ For more details, run `microweb --help`.
 
 ## Project Structure
 
+
 ```
 microweb/
 ├── microweb/
@@ -307,17 +354,12 @@ microweb/
 │   ├── cli.py
 │   ├── firmware/
 │   │   ├── ESP32_GENERIC-20250415-v1.25.0.bin
-│   │   ├── boot.py
-│   │   ├── main.py
-│   ├── static/
-│   │   ├── index.html
-│   │   ├── style.css
-│   │   ├── welcome.html
-│   │   ├── wifi_updated.html
-├── setup.py
-├── README.md
-
+│   │   ├── boot.py         # Minimal boot script 
+│   │   ├── main.py         # Imports and runs your app module
+├── setup.py                # Packaging and install configuration
+├── README.md               # Project documentation
 ```
+
 
 ---
 

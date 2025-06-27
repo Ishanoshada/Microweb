@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - {% name %}</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="black-hole"></div>
+<div class="cosmic-particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/contact" class="active">Contact</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <h1>Contact {% name %}</h1>
+            <p>Let's connect and discuss your project ideas</p>
+        </div>
+
+        <section class="contact-section">
+            <div class="contact-info-card">
+                <h2>Get in Touch</h2>
+                <div class="contact-method">
+                    <h3>Email</h3>
+                    <p>{% email %}</p>
+                </div>
+                <div class="contact-method">
+                    <h3>Phone</h3>
+                    <p>{% phone %}</p>
+                </div>
+                <div class="contact-method">
+                    <h3>Location</h3>
+                    <p>{% location %}</p>
+                </div>
+            </div>
+
+            <div class="availability">
+                <h2>Availability</h2>
+                <p>I'm currently available for freelance projects and consulting work. Whether you need IoT solutions, web development, or embedded systems programming, I'd love to help bring your ideas to life.</p>
+                <p>Response time: Usually within 24 hours</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 {% name %}. Portfolio hosted on ESP32.</p>
+    </footer>
+</body>
+</html>

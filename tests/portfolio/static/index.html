@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% name %} - Portfolio</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="black-hole"></div>
+<div class="cosmic-particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="hero">
+            <h1>Hello, I'm {% name %}</h1>
+            <h2>{% title %}</h2>
+            <p>{% about %}</p>
+            <div class="cta-buttons">
+                <a href="/projects" class="btn">View Projects</a>
+                <a href="/contact" class="btn btn-outline">Contact Me</a>
+            </div>
+        </div>
+
+        <section class="quick-info">
+            <h3>Quick Info</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Experience</h4>
+                    <p>5+ Years</p>
+                </div>
+                <div class="info-item">
+                    <h4>Specialization</h4>
+                    <p>IoT & Web Development</p>
+                </div>
+                <div class="info-item">
+                    <h4>Status</h4>
+                    <p>Available for Projects</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 {% name %}. Portfolio hosted on ESP32.</p>
+    </footer>
+</body>
+</html>

@@ -4,7 +4,7 @@ setup(
     # The name of your package as it will appear on PyPI
     name="microweb",
     # The current version of your package
-    version="0.1.1",
+    version="0.1.2",
     # Automatically find all packages and subpackages
     packages=find_packages(),
     # Include non-code files specified in MANIFEST.in or package_data
@@ -22,7 +22,7 @@ setup(
         ]
     },
     # Author information
-    author="Your Name",
+    author="Ishan Oshada",
     # Short description of your package
     description="A web server framework for MicroPython . Easily build and deploy web applications using MicroPython.",
     # Long description, usually from your README file

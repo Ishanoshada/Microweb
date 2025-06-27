@@ -215,33 +215,45 @@ def cli():
 @cli.command()
 @click.option('--port', default=None, help='Serial port, e.g., COM10')
 @click.option('--erase', is_flag=True, help='Erase all flash before writing firmware')
-def flash(port, erase):
-    """Flash MicroPython and MicroWeb to the ESP32."""
+@click.option('--esp8266', is_flag=True, help='Flash ESP8266 firmware instead of ESP32')
+@click.option('--firmware', type=click.Path(exists=True), help='Custom firmware .bin file to flash')
+def flash(port, erase, esp8266, firmware):
+    """Flash MicroPython and MicroWeb to the ESP32 or ESP8266."""
     if not port:
         ports = [p.device for p in serial.tools.list_ports.comports()]
         port = ports[0] if ports else None
     if not port:
-        print_colored("No ESP32 found. Specify --port, e.g., --port COM10.", color='red')
+        print_colored("No ESP device found. Specify --port, e.g., --port COM10.", color='red')
         return
+
+    chip_name = "ESP8266" if esp8266 else "ESP32"
+    if firmware:
+        firmware_path = os.path.abspath(firmware)
+        print_colored(f"Using custom firmware: {firmware_path}", color='cyan')
+    else:
+        firmware_file = f"{chip_name}_GENERIC-20250415-v1.25.0.bin"
+        firmware_path = pkg_resources.resource_filename('microweb', f'firmware/{firmware_file}')
+
     if erase:
-        print_colored("You requested --erase. This will erase ALL data on the ESP32!", color='yellow')
+        print_colored(f"You requested --erase. This will erase ALL data on the {chip_name}!", color='yellow')
         confirm = input("Type 'erase' to continue, or anything else to cancel: ")
         if "erase" not in confirm.lower():
             print_colored("Erase cancelled.", color='yellow')
             return
-        print_colored(f"Erasing all flash on {port}...", color='yellow')
+        print_colored(f"Erasing all flash on {port} ({chip_name})...", color='yellow')
         esptool.main(['--port', port, 'erase_flash'])
+
     try:
         print_colored(f"Checking for MicroPython on {port}...", color='blue')
         if check_micropython(port):
             print_colored(f"MicroPython detected on {port}. Skipping firmware flash.", color='green')
         else:
-            firmware_path = pkg_resources.resource_filename('microweb', 'firmware/ESP32_GENERIC-20250415-v1.25.0.bin')
             if not os.path.exists(firmware_path):
-                print_colored(f"Error: Firmware file not found at {firmware_path}. Ensure it is included in the package.", color='red')
+                print_colored(f"Error: Firmware file not found at {firmware_path}.", color='red')
                 return
-            print_colored(f"Flashing firmware on {port}...", color='blue')
+            print_colored(f"Flashing {chip_name} firmware on {port}...", color='blue')
             esptool.main(['--port', port, 'write_flash', '-z', '0x1000', firmware_path])
+
         print_colored("Uploading core files...", color='blue')
         core_files = [
             ('firmware/boot.py', 'boot.py'),
@@ -255,11 +267,14 @@ def flash(port, erase):
                 print_colored(f"Error: Source file {src_path} not found.", color='red')
                 return
             upload_file(src_path, port, destination=dest)
+
         print_colored("Verifying uploaded files...", color='blue')
         verify_files(port, [dest for _, dest in core_files])
-        print_colored("MicroWeb flashed successfully", color='green')
+        print_colored(f"MicroWeb flashed successfully to {chip_name}", color='green')
+
     except Exception as e:
         print_colored(f"Error during flash: {e}", color='red')
+
 
 @cli.command()
 @click.argument('file')
