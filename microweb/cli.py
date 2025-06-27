@@ -183,31 +183,47 @@ def verify_static_files_exist(static_files, static_dir):
     return existing_files, missing_files
 
 def upload_boot_py(port, module_name):
-    """Create and upload boot.py to import the app module."""
+    """Create and upload boot.py that imports the specified app module."""
     boot_content = f"import {module_name}\n"
-    import tempfile
-    with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8') as tmp:
-        tmp.write(boot_content)
-        tmp_path = tmp.name
+
+    with open("boot.py", "w", encoding="utf-8") as f:
+        f.write(boot_content)
+
     try:
-        print_colored(f"⬆️  Uploading boot.py to import {module_name}...", color='cyan')
-        upload_file(tmp_path, port, destination='boot.py')
+        print_colored(f"⬆️  Uploading boot.py to import '{module_name}'...", color='cyan')
+        upload_file("boot.py", port, destination='boot.py')
+        print_colored("✅ boot.py uploaded successfully.", color='green')
     finally:
-        os.unlink(tmp_path)
+        os.remove("boot.py")
+
 
 def remove_boot_py(port):
-    """Remove boot.py from the ESP32 filesystem."""
-    try:
-        print_colored("🗑️ Removing boot.py from ESP32...", color='cyan')
-        cmd = ['mpremote', 'connect', port, 'exec', "import os; os.remove('boot.py')"]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        if result.returncode != 0:
-            print_colored(f"⚠️ Could not remove boot.py: {result.stderr.strip()}", color='yellow')
-        else:
-            print_colored("boot.py removed successfully.", color='green')
-    except Exception as e:
-        print_colored(f"Error removing boot.py: {e}", color='red')
+    """Replace boot.py on ESP32 with minimal content using ampy."""
+    boot_content = "import gc\ngc.collect()\n"
+    boot_filename = "boot.py"
 
+    # Write minimal boot.py locally
+    with open(boot_filename, "w", encoding="utf-8") as f:
+        f.write(boot_content)
+
+    try:
+        print_colored(f"🗑️ Replacing boot.py on ESP32 (port {port}) using ampy...", color='cyan')
+        cmd = ["ampy", "--port", port, "put", boot_filename]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+
+        if result.returncode != 0:
+            print_colored(f"⚠️ Failed to replace boot.py: {result.stderr.strip()}", color='yellow')
+        else:
+            print_colored("✅ boot.py replaced successfully.", color='green')
+
+    except Exception as e:
+        print_colored(f"❌ Error replacing boot.py: {e}", color='red')
+
+    finally:
+        if os.path.exists(boot_filename):
+            os.remove(boot_filename)
+
+            
 @click.group()
 def cli():
     pass
@@ -353,12 +369,13 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
     if not port:
         print_colored("No ESP32 found. Specify --port, e.g., --port COM10.", color='red')
         return
-    if not check_micropython(port):
-        print_colored(f"MicroPython not detected on ESP32. Please run 'microweb flash --port {port}' first.", color='red')
-        return
     if remove_boot:
         remove_boot_py(port)
         return
+    if not check_micropython(port):
+        print_colored(f"MicroPython not detected on ESP32. Please run 'microweb flash --port {port}' first.", color='red')
+        return
+    
     try:
         print_colored(f"\nGetting remote file information from {port}...", color='blue')
         remote_files = get_remote_file_info(port)

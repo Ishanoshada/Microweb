@@ -33,7 +33,7 @@ def upload_file(file_path, port=None,destination=None):
             raise Exception(f"File {file_name} not found after upload")
             
     except subprocess.TimeoutExpired:
-        raise Exception(f"Upload timeout for {file_name}")
+        raise Exception(f"Upload timeout for {file_name} or that's uploaded that is effect to boot.py that is why timeout. ")
     except Exception as e:
         raise Exception(f"Upload error for {file_name}: {e}")
 

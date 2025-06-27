@@ -4,7 +4,7 @@ setup(
     # The name of your package as it will appear on PyPI
     name="microweb",
     # The current version of your package
-    version="0.1.2",
+    version="0.1.3",
     # Automatically find all packages and subpackages
     packages=find_packages(),
     # Include non-code files specified in MANIFEST.in or package_data
