@@ -37,7 +37,7 @@ def methods(req):
     if req.method == 'GET':
         return app.json_response({"method": "GET", "message": "This is a GET request"})
     elif req.method == 'POST':
-        data = req.json()
+        data = req.form
         return app.json_response({"method": "POST", "received": data})
 
 @app.route('/submit', methods=['GET', 'POST'])

@@ -6,7 +6,7 @@
 </head>
 <body>
     <h1>Projects</h1>
-    <p>{% greeting %}</p>
+    {% greeting %}
     {{ if projects }}
         <ul>
         {{ for project in projects }}
@@ -19,6 +19,5 @@
     {{ else }}
         <p>No projects found</p>
     {{ endif }}
-    <script src="/script.js"></script>
 </body>
 </html>

@@ -400,7 +400,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 else:
                     files_skipped.append((remote_name, reason))
             else:
-                print_colored(f"Warning: Template file {template_file} not found locally, skipping upload", color='yellow')
+                print_colored(f"Warning: Template file {template_file} not found locally, skipping upload or maybe can find", color='yellow')
         static_uploads = []
         if existing_files:
             for url_path, file_full_path in existing_files:
@@ -497,6 +497,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
 @click.option('--remove', 'remove_everything', is_flag=True, help='Actually remove all files in the ESP32 home directory')
 def remove(port, remove_everything):
     """Remove all files in the ESP32 home directory (requires --remove flag to actually delete files)."""
+    boot_files = ["boot.py","microweb.py","wifi.py"]
     if not port:
         ports = [p.device for p in serial.tools.list_ports.comports()]
         port = ports[0] if ports else None
@@ -510,17 +511,19 @@ def remove(port, remove_everything):
         if remove_everything:
             print_colored("Removing all files in ESP32 home directory...", color='yellow')
             remote_files = get_remote_file_info(port)
+            
             if not remote_files:
                 print_colored("No files found or error accessing filesystem.", color='yellow')
                 return
             for filename in remote_files.keys():
                 if filename in ('.', '..'):
                     continue
-                print_colored(f"Removing {filename}...", color='cyan')
-                cmd_rm = ['mpremote', 'connect', port, 'rm', filename]
-                result = subprocess.run(cmd_rm, capture_output=True, text=True, timeout=10)
-                if result.returncode != 0:
-                    print_colored(f"Error removing {filename}: {result.stderr}", color='red')
+                if not filename in boot_files:
+                        print_colored(f"Removing {filename}...", color='cyan')
+                        cmd_rm = ['mpremote', 'connect', port, 'rm', filename]
+                        result = subprocess.run(cmd_rm, capture_output=True, text=True, timeout=10)
+                        if result.returncode != 0:
+                            print_colored(f"Error removing {filename}: {result.stderr}", color='red')
             print_colored("All files in ESP32 home directory removed.", color='green')
         else:
             print_colored("Dry run: No files were removed. Use --remove to actually delete all files in the ESP32 home directory.", color='yellow')
@@ -528,11 +531,10 @@ def remove(port, remove_everything):
         print_colored(f"Error removing files: {e}", color='red')
 
 
-
 @cli.command()
 @click.option('--path', default='example_app', show_default=True, help='Directory to create the example app')
 def create(path):
-    """Create an example MicroWeb app with app.py, static/index.html, and README.md."""
+    """Create an example MicroWeb app with app.py, static/index.html, static/style.css, static/script.js, and README.md."""
     try:
         os.makedirs(path, exist_ok=True)
         os.makedirs(os.path.join(path, 'static'), exist_ok=True)
@@ -540,41 +542,29 @@ def create(path):
         app_content = """import wifi
 from microweb import MicroWeb
 
-# Define a simple User model to store and retrieve user data
-class User:
-    def __init__(self, user_id, name, email):
-        self.user_id = user_id
-        self.name = name
-        self.email = email
-    
-    def to_dict(self):
-        return {
-            'user_id': self.user_id,
-            'name': self.name,
-            'email': self.email
-        }
-
 # Initialize MicroWeb application with debug mode and Wi-Fi access point configuration
 app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
 
-# Define route for the root URL, rendering the index.html template with a welcome message
 @app.route('/')
 def home(req):
-    return app.render_template('index.html', message="Welcome to MicroWeb API!")
+    # Test case 1: Populated projects list
+    projects = [
+        {'title': 'Smart Home Dashboard', 'description': 'A dashboard for home automation'},
+        {'title': 'Weather Station', 'description': 'Real-time weather monitoring'},
+        {'title': 'IoT Sensor Network', 'description': 'Network for IoT sensors'}
+    ]
+    return app.render_template('index.html', greeting='Welcome to MicroWeb!', projects=projects)
+
+@app.route('/empty')
+def empty(req):
+    # Test case 2: Empty projects list
+    projects = []
+    return app.render_template('index.html', greeting='No Projects Available', projects=projects)
 
 # Define API route to return server status and IP address as JSON
 @app.route('/api/status', methods=['GET'])
 def status(req):
     return app.json_response({"status": "running", "ip": wifi.get_ip()})
-
-# Define API route to get user data using the User model
-@app.route('/api/user/<id>')
-def get_user(req, match):
-    # Extract ID from URL parameter, default to "Anonymous" if not provided
-    id = match.group(1) if match else "Anonymous"
-    # Create a sample user instance (in a real app, this could come from a database)
-    user = User(user_id=id, name=f"User {id}", email=f"user{id}@example.com")
-    return app.json_response(user.to_dict())
 
 # Define API route to greet a user by ID
 @app.route('/greet/<name>')
@@ -594,7 +584,7 @@ def greet(req, match):
 #     if req.method == 'GET':
 #         return app.json_response({"method": "GET", "message": "This is a GET request"})
 #     elif req.method == 'POST':
-#         data = req.json()  # Get JSON data from POST body
+#         data = req.form  # Get JSON data from POST body
 #         return app.json_response({"method": "POST", "received": data})
 
 # Define route for form submission, rendering form.html for GET and result.html for POST
@@ -607,33 +597,86 @@ def greet(req, match):
 #     else:
 #         return app.render_template('form.html')
 
-# Register static file style.css to be served at /style.css
-# app.add_static('/style.css', 'style.css')
+# Register static files
+app.add_static('/style.css', 'style.css')
+app.add_static('/script.js', 'script.js')
 
 # Start the MicroWeb server
-app.run()
+if __name__ == '__main__':
+    app.run()
 """
 
-        
         index_content = """<!DOCTYPE html>
 <html>
 <head>
-    <title>MicroWeb Example</title>
+    <title>Projects</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <h1>{% message %}</h1>
-    <p>This is an example MicroWeb application.</p>
+    <h1>Projects</h1>
+    <p>{% greeting %}</p>
+    {{ if projects }}
+        <ul>
+        {{ for project in projects }}
+            <li>
+                <h2>{{ project.title }}</h2>
+                <p>{{ project.description }}</p>
+            </li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No projects found</p>
+    {{ endif }}
+    <script src="/script.js"></script>
 </body>
 </html>
 """
-        
+
+        style_content = """body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f0f0f0;
+}
+h1 {
+    color: #333;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+li {
+    background: #fff;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+h2 {
+    margin: 0 0 10px;
+    color: #007BFF;
+}
+p {
+    margin: 0;
+    color: #555;
+}
+"""
+
+        script_content = """document.addEventListener('DOMContentLoaded', function() {
+    console.log('MicroWeb example app loaded!');
+    // Add interactivity if needed
+});
+"""
+
         readme_content = """# MicroWeb Example Application
 
-This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It includes a basic web server with a homepage and a status API endpoint.
+This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It demonstrates dynamic routing, template rendering with for loops, static file serving, and JSON responses.
 
 ## Files
-- `app.py`: The main MicroWeb application script.
-- `static/index.html`: The homepage template.
+- `app.py`: The main MicroWeb application script with routes for a project list and API endpoints.
+- `static/index.html`: A template displaying a list of projects using a for loop and conditional rendering.
+- `static/style.css`: CSS styles for the project list.
+- `static/script.js`: Basic JavaScript for interactivity.
+- `README.md`: This file.
 
 ## Setup and Usage
 
@@ -653,45 +696,66 @@ This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It 
 ### Run the Application
 1. Upload and run the application:
    ```bash
-   microweb run app.py --port COM10
+   microweb run app.py --port COM10 --static static/
    ```
 2. Connect to the Wi-Fi access point:
    - **SSID**: MyESP32
    - **Password**: MyPassword
-3. Open a browser and visit `http://192.168.4.1` to see the homepage.
+3. Open a browser and visit:
+   - `http://192.168.4.1/` to see the project list.
+   - `http://192.168.4.1/empty` to see the "No projects found" message.
+   - `http://192.168.4.1/api/status` for the server status.
+   - `http://192.168.4.1/greet/Alice` to test dynamic routing.
 
 ### Additional Commands
 - Set the app to run on boot:
   ```bash
-  microweb run app.py --port COM10 --add-boot
+  microweb run app.py --port COM10 --add-boot --static static/
   ```
 - Remove all files from the device:
   ```bash
   microweb remove --port COM10 --remove
   ```
 
+## Testing
+- Use a browser to access `http://192.168.4.1/` and `http://192.168.4.1/empty` to verify the template's for loop and conditional rendering.
+- Test API endpoints with curl:
+  ```bash
+  curl http://192.168.4.1/api/status
+  curl http://192.168.4.1/greet/Alice
+  ```
+- Check the browser's developer console for JavaScript logs from `script.js`.
+
 For more details, run:
 ```bash
 microweb examples
 ```
 """
-        
+
         app_path = os.path.join(path, 'app.py')
         index_path = os.path.join(path, 'static', 'index.html')
+        style_path = os.path.join(path, 'static', 'style.css')
+        script_path = os.path.join(path, 'static', 'script.js')
         readme_path = os.path.join(path, 'README.md')
         
         with open(app_path, 'w', encoding='utf-8') as f:
             f.write(app_content)
         with open(index_path, 'w', encoding='utf-8') as f:
             f.write(index_content)
+        with open(style_path, 'w', encoding='utf-8') as f:
+            f.write(style_content)
+        with open(script_path, 'w', encoding='utf-8') as f:
+            f.write(script_content)
         with open(readme_path, 'w', encoding='utf-8') as f:
             f.write(readme_content)
         
         print_colored(f"Example app created at {path}/", color='green')
         print_colored(f"  - {app_path}", color='cyan')
         print_colored(f"  - {index_path}", color='cyan')
+        print_colored(f"  - {style_path}", color='cyan')
+        print_colored(f"  - {script_path}", color='cyan')
         print_colored(f"  - {readme_path}", color='cyan')
-        print_colored(f"Run with: microweb run {app_path} --port COM10", color='yellow')
+        print_colored(f"Run with: microweb run {app_path} --port COM10 --static static/", color='yellow')
     except Exception as e:
         print_colored(f"Error creating example app: {e}", color='red')
 

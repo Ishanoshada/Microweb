@@ -1,6 +1,7 @@
 # MicroWeb
 
-MicroWeb is a lightweight web server framework for MicroPython on the ESP32. It enables rapid development of web-based applications with dynamic routing, Wi-Fi configuration, query parameter handling, POST request support, JSON responses, and static file serving. The package includes a robust CLI for flashing MicroPython and running custom applications.
+MicroWeb is a lightweight web server framework for MicroPython on the ESP32, designed for efficient development of web-based applications. It supports dynamic routing, Wi-Fi configuration (access point or station mode), query parameter and POST request handling, JSON responses, static file serving, and a powerful template engine with for loops and if conditionals. The package includes a robust CLI for flashing MicroPython, uploading files, and running custom applications on the ESP32.
+
 
 
 **Example: Minimal MicroWeb Server**
@@ -64,6 +65,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
     - [Minimal Example (`tests/2/app.py`)](#minimal-example-tests2apppy)
     - [Static Files and Templates Example (`tests/1/app.py`)](#static-files-and-templates-example-tests1apppy)
     - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
+    - [For Loop Example](#for-loop-example-testsfor_loops)
 - [Wi-Fi Configuration](#wi-fi-configuration)
 - [Accessing the Web Server](#accessing-the-web-server)
 - [CLI Tool Usage Examples](#cli-tool-usage-examples)
@@ -72,7 +74,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-- [License](#license)
+
 
 ![example](/src/img.jpg)
 
@@ -116,13 +118,13 @@ pip install .
 ## Usage
 
 ### Creating an Example Application
-Generate a sample MicroWeb application with a basic web server, template, and documentation:
+Generate a sample MicroWeb application with a web server, template with `for` loops and conditionals, static CSS/JavaScript, and documentation:
 
 ```bash
 microweb create --path example_app
 ```
 
-- Creates a directory (default: `example_app`) containing `app.py`, `static/index.html`, and a `README.md` with usage instructions.
+- Creates a directory (default: `example_app`) containing `app.py`, `static/index.html`, `static/style.css`, `static/script.js`, and a `README.md` with usage instructions.
 - Option: `--path <directory>` to specify a custom directory name.
 
 ### Flashing MicroPython and MicroWeb
@@ -248,7 +250,7 @@ def methods(req):
     if req.method == 'GET':
         return app.json_response({"method": "GET", "message": "This is a GET request"})
     elif req.method == 'POST':
-        data = req.json()
+        data = req.form
         return app.json_response({"method": "POST", "received": data})
 
 
@@ -284,6 +286,128 @@ The `tests/portfolio/` directory contains a full-featured portfolio web app buil
 - Example of serving a personal portfolio from an ESP32
 
 See `tests/portfolio/app.py` and the `static/` folder for a complete, ready-to-deploy example.
+
+### **For Loop Example (`tests/for_loops`)**
+
+This example demonstrates the use of MicroWeb’s template engine with a `for` loop to display a list of projects dynamically. It includes two routes: one with a populated project list and one with an empty list to showcase conditional rendering using `if`, `else`, and `for` constructs in the template.
+
+**Example Code (`tests/for_loops/app.py`)**:
+
+```python
+import wifi
+from microweb import MicroWeb
+
+# Initialize MicroWeb with debug mode and access point
+app = MicroWeb(debug=True, ap={'ssid': 'MyESP32', 'password': 'mypassword'})
+
+@app.route('/')
+def home(req):
+    # Test case 1: Populated projects list
+    projects = [
+        {'title': 'Smart Home Dashboard', 'description': 'A dashboard for home automation'},
+        {'title': 'Weather Station', 'description': 'Real-time weather monitoring'},
+        {'title': 'IoT Sensor Network', 'description': 'Network for IoT sensors'}
+    ]
+    return app.render_template('index.html', greeting='Welcome to MicroWeb!', projects=projects)
+
+@app.route('/empty')
+def empty(req):
+    # Test case 2: Empty projects list
+    projects = []
+    return app.render_template('index.html', greeting='No Projects Available', projects=projects)
+
+app.add_static('/style.css', 'style.css')
+
+if __name__ == '__main__':
+    app.run()
+```
+
+**Example Template (`tests/for_loops/static/index.html`)**:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projects</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Projects</h1>
+    {% greeting %}
+    {{ if projects }}
+        <ul>
+        {{ for project in projects }}
+            <li>
+                <h2>{{ project.title }}</h2>
+                <p>{{ project.description }}</p>
+            </li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No projects found</p>
+    {{ endif }}
+</body>
+</html>
+```
+
+**Example Static File (`tests/for_loops/static/style.css`)**:
+
+```css
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f0f0f0;
+}
+h1 {
+    color: #333;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+li {
+    background: #fff;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+h2 {
+    margin: 0 0 10px;
+    color: #007BFF;
+}
+p {
+    margin: 0;
+    color: #555;
+}
+```
+
+**Explanation**:
+- **Application Code (`app.py`)**:
+  - The `/` route passes a list of projects with `title` and `description` fields, along with a `greeting` variable.
+  - The `/empty` route passes an empty `projects` list to test the `else` branch of the template.
+  - `app.add_static('/style.css', 'style.css')` serves the CSS file for styling the template.
+- **Template (`index.html`)**:
+  - `{% greeting %}` renders the greeting message (e.g., "Welcome to MicroWeb!").
+  - `{{ if projects }}` checks if the `projects` list is non-empty.
+  - `{{ for project in projects }}` iterates over the `projects` list, rendering each project’s `title` and `description` in an `<li>` element.
+  - `{{ else }}` displays "No projects found" if the `projects` list is empty.
+  - The `<link rel="stylesheet" href="/style.css">` tag applies styles from `style.css`.
+- **Static File (`style.css`)**:
+  - Provides a clean, modern look with a light background, styled list items, and shadowed boxes for each project.
+- **Testing**:
+  - Upload files: `microweb run app.py --static static/ --port COM10`.
+  - Access `http://192.168.4.1/` to see the project list Zornlist with descriptions.
+  - Access `http://192.168.4.1/empty` to see the "No projects found" message.
+  - Use `curl http://192.168.4.1/` or a browser to verify the output.
+- **Output**:
+  - For `/`: Displays a styled list of projects with titles and descriptions.
+  - For `/empty`: Displays "No projects found" with the greeting.
+- **Best Practices**:
+  - Ensure `index.html` and `style.css` are in the `static/` directory.
+  - Test both routes to verify conditional rendering.
+  - Use `debug=True` to log any template or file-serving errors.
+
 
 ---
 
@@ -368,7 +492,7 @@ def home(req):
 
 **Explanation**:
 - The `@app.route('/')` decorator maps the root URL (`/`) to the `home` function.
-- The `req` parameter provides access to request data (e.g., `req.method`, `req.form`, `req.json()`).
+- The `req` parameter provides access to request data (e.g., `req.method`, `req.form`, `req.form`).
 - `app.render_template` renders an HTML template (`index.html`) with dynamic variables (e.g., `message`).
 
 For dynamic routing with URL parameters:
@@ -392,73 +516,154 @@ def methods(req):
     if req.method == 'GET':
         return app.json_response({'method': 'GET', 'message': 'This is a GET request'})
     elif req.method == 'POST':
-        data = req.json()
+        data = req.form
         return app.json_response({'method': 'POST', 'received': data})
 ```
 
 **Explanation**:
 - The `methods=['GET', 'POST']` parameter allows the route to handle both GET and POST requests.
 - `req.method` checks the HTTP method to determine the response.
-- `req.json()` parses JSON data from the POST request body.
+- `req.form` parses JSON data from the POST request body.
 - `app.json_response` returns a JSON response with the specified data.
 
-### **4. Rendering Templates**
-MicroWeb supports rendering HTML templates with dynamic data, ideal for web interfaces. Templates use a simple syntax (e.g., `{% variable %}`) for dynamic content.
+
+### **4. Rendering Templates (Updated with Advanced Template Engine Usage)**
+
+MicroWeb supports rendering HTML templates with dynamic data, ideal for creating dynamic web interfaces. The template engine uses a simple syntax with `{% %}` for variables and control structures (e.g., loops, conditionals) and `{{ }}` for control blocks like `if`, `for`, `else`, and `endif`. This allows you to create flexible, reusable templates for your ESP32-based web applications.
+
+#### **Basic Template Rendering**
+Templates are stored in the `static/` directory (or a specified folder) and rendered using `app.render_template`. Variables passed to the template are inserted into placeholders.
 
 ```python
-@app.route('/submit', methods=['GET', 'POST'])
-def submit_form(req):
-    if req.method == 'POST':
-        return app.render_template('result.html', data=str(req.form), method='POST')
-    else:
-        return app.render_template('form.html')
+@app.route('/')
+def home(req):
+    return app.render_template('index.html', message='Welcome to MicroWeb!')
 ```
 
 **Explanation**:
-- Templates (e.g., `form.html`, `result.html`) must be in the `static/` directory or a specified folder.
-- `req.form` accesses form data from POST requests.
-- `app.render_template` passes variables (e.g., `data`, `method`) to the template for dynamic rendering.
+- `app.render_template('index.html', message='Welcome to MicroWeb!')` renders the `index.html` template, replacing `{% message %}` with the string `"Welcome to MicroWeb!"`.
+- Templates must be uploaded to the ESP32’s filesystem (e.g., using `microweb run app.py --static static/ --port COM10`).
 
-**Example Template (`static/result.html`)**:
+#### **Advanced Template Engine Usage**
+MicroWeb’s template engine supports control structures like conditionals (`if`, `else`, `endif`) and loops (`for`, `endfor`), enabling dynamic content generation. Below is an example of a template (`projects.html`) that uses these features to display a list of projects or a fallback message.
+
+**Example Template (`static/projects.html`)**:
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Form Result</title>
+    <title>Projects</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <p><strong>Method:</strong> {% method %}</p>
-    <p><strong>Data:</strong> {% data %}</p>
+    <h1>Projects</h1>
+    {% greeting %}
+    {{ if projects }}
+        <ul>
+        {{ for project in projects }}
+            <p>{{ project.title }}</p>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>Projects not found</p>
+    {{ endif }}
 </body>
 </html>
 ```
 
-**Explanation**:
-- The `{% method %}` and `{% data %}` placeholders are replaced with the `method` and `data` variables passed to `app.render_template`.
-- The `<link rel="stylesheet" href="/style.css">` tag references a static CSS file, served via `app.add_static('/style.css', 'style.css')`.
-- Ensure `result.html` and `style.css` are in the `static/` directory and uploaded to the ESP32.
-
-**Example Form Template (`static/form.html`)**:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Form</title>
-    <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-    <form method="POST" action="/submit">
-        <input type="text" name="username" placeholder="Enter your name">
-        <button type="submit">Submit</button>
-    </form>
-</body>
-</html>
+**Corresponding Route**:
+```python
+@app.route('/projects')
+def projects(req):
+    projects = [
+        {'title': 'Project A', 'description': 'First project'},
+        {'title': 'Project B', 'description': 'Second project'}
+    ]
+    return app.render_template('projects.html', greeting='Welcome to the Projects Page!', projects=projects)
 ```
 
 **Explanation**:
-- The form submits data to `/submit` via POST, which is processed by the `submit_form` route.
-- The `style.css` file is served as a static file, ensuring consistent styling across templates.
+- **Variable Substitution**: `{% greeting %}` is replaced with `"Welcome to the Projects Page!"`.
+- **Conditional (`if`, `else`, `endif`)**: The `{{ if projects }}` block checks if the `projects` variable is non-empty. If `projects` exists and is not empty, the `ul` list is rendered; otherwise, the `Projects not found` message is shown.
+- **Loop (`for`, `endfor`)**: The `{{ for project in projects }}` loop iterates over the `projects` list, rendering a `<p>` tag for each project’s `title` (accessed via `{{ project.title }}`).
+- **Dot Notation**: The template engine supports dot notation for accessing dictionary keys or object attributes (e.g., `project.title` retrieves the `title` key from each project dictionary).
+- **Static Files**: The `<link rel="stylesheet" href="/style.css">` tag references a static CSS file, served via `app.add_static('/style.css', 'style.css')`.
+
+**Alternative Scenario (Empty Projects List)**:
+```python
+@app.route('/projects-empty')
+def projects_empty(req):
+    return app.render_template('projects.html', greeting='No Projects Available', projects=[])
+```
+
+**Explanation**:
+- If `projects=[]` (empty list), the `{{ if projects }}` condition evaluates to false, and the template renders the fallback message: `<p>Projects not found</p>`.
+
+#### **Template Syntax Rules**
+- **Variables**: Use `{% variable %}` for simple variable substitution (e.g., `{% greeting %}`).
+- **Control Structures**:
+  - `{{ if condition }} ... {{ else }} ... {{ endif }}`: Evaluates `condition` (truthy/falsy) to render the appropriate branch.
+  - `{{ for var in iterable }} ... {{ endfor }}`: Iterates over `iterable`, assigning each item to `var`.
+- **Dot Notation**: Access nested data with `variable.subkey` (e.g., `project.title`).
+- **Error Handling**: If a variable or key is undefined, the engine returns an empty string to avoid crashes, ensuring robust rendering on resource-constrained ESP32 devices.
+
+#### **Best Practices for Templates**
+- **File Placement**: Store templates in the `static/` directory and upload them to the ESP32 using the `microweb` CLI.
+- **Caching**: MicroWeb caches parsed templates to optimize memory usage on the ESP32. Avoid frequent template changes in production to leverage caching.
+- **Debugging**: Enable `debug=True` in `MicroWeb` initialization to log template rendering errors (e.g., missing files or syntax errors).
+- **Validation**: Test templates with both valid and empty data (e.g., `projects=[]`) to ensure the `if` and `else` branches work as expected.
+- **Static Assets**: Link CSS, JavaScript, or images in templates using `app.add_static` to serve them efficiently.
+
+#### **Testing the Template**
+- **Upload Files**: Ensure `projects.html` and `style.css` are in the `static/` directory and uploaded:
+  ```bash
+  microweb run app.py --static static/ --port COM10
+  ```
+- **Access**: Open `http://192.168.4.1/projects` (or the ESP32’s IP) in a browser to see the rendered project list.
+- **Verify Output**:
+  - With projects: Displays `<h1>Projects</h1><p>Welcome to the Projects Page!</p><ul><p>Project A</p><p>Project B</p></ul>`.
+  - Without projects: Displays `<h1>Projects</h1><p>No Projects Available</p><p>Projects not found</p>`.
+- **curl Test**:
+  ```bash
+  curl http://192.168.4.1/projects
+  ```
+
+#### **Complete Example with Template**
+Here’s a full example combining the `projects.html` template with routes and static file serving:
+
+```python
+import wifi
+from microweb import MicroWeb
+
+app = MicroWeb(debug=True, ap={'ssid': 'MyESP32', 'password': 'mypassword'})
+
+@app.route('/')
+def home(req):
+    return app.render_template('index.html', message='Welcome to MicroWeb!')
+
+@app.route('/projects')
+def projects(req):
+    projects = [
+        {'title': 'Project A', 'description': 'First project'},
+        {'title': 'Project B', 'description': 'Second project'}
+    ]
+    return app.render_template('projects.html', greeting='Welcome to the Projects Page!', projects=projects)
+
+@app.route('/projects-empty')
+def projects_empty(req):
+    return app.render_template('projects.html', greeting='No Projects Available', projects=[])
+
+app.add_static('/style.css', 'style.css')
+
+if __name__ == '__main__':
+    app.run()
+```
+
+**Explanation**:
+- The `/projects` route renders the `projects.html` template with a list of projects, triggering the `for` loop to display each project’s title.
+- The `/projects-empty` route tests the `else` branch by passing an empty `projects` list.
+- The `style.css` file is served as a static file for consistent styling.
+- Run the app and access `http://192.168.4.1/projects` or `http://192.168.4.1/projects-empty` to test both scenarios.
 
 ### **5. Serving Static Files**
 MicroWeb allows serving static files like CSS, JavaScript, or images to enhance web interfaces.
