@@ -475,6 +475,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 if result.returncode != 0:
                     print_colored(f"❌ Error running {file}: return code {result.returncode}", color='red')
                     print_colored(f"stdout:\n{result.stdout.strip()}\nstderr:\n{result.stderr.strip()}", color='red')
+                    print_colored(f"try microweb flash --port COM10 ",color="cyan")
                     return
                 if upload_count > 0:
                     print_colored(f"📊 Uploaded {upload_count} file(s), skipped {len(files_skipped)} file(s)", color='green')
@@ -488,6 +489,8 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
             print_colored(f"⚠️ boot.py uploaded, app will run automatically on boot. Not running app.run() now.", color='yellow')
     except Exception as e:
         print_colored(f"❌ Error: {e}", color='red')
+
+
 
 @cli.command()
 @click.option('--port', default=None, help='Serial port, e.g., COM10')
@@ -506,51 +509,239 @@ def remove(port, remove_everything):
     try:
         if remove_everything:
             print_colored("Removing all files in ESP32 home directory...", color='yellow')
-            cmd_ls = ['mpremote', 'connect', port, 'ls']
-            result = subprocess.run(cmd_ls, capture_output=True, text=True, timeout=10)
-            if result.returncode == 0:
-                files = []
-                for line in result.stdout.strip().split('\n'):
-                    parts = line.strip().split()
-                    if len(parts) >= 2:
-                        filename = ' '.join(parts[1:])
-                        files.append(filename)
-                for filename in files:
-                    if filename in ('.', '..'):
-                        continue
-                    print_colored(f"Removing {filename}...", color='cyan')
-                    cmd_rm = [
-                        'mpremote', 'connect', port, 'exec',
-                        f"import os; import shutil; "
-                        f"shutil.rmtree('{filename}') if hasattr(__import__('shutil'), 'rmtree') and os.path.isdir('{filename}') "
-                        f"else (os.remove('{filename}') if '{filename}' in os.listdir() else None)"
-                    ]
-                    subprocess.run(cmd_rm, capture_output=True, text=True, timeout=10)
-                print_colored("All files in ESP32 home directory removed.", color='green')
-            else:
-                print_colored(f"Error listing files: {result.stderr}", color='red')
+            remote_files = get_remote_file_info(port)
+            if not remote_files:
+                print_colored("No files found or error accessing filesystem.", color='yellow')
+                return
+            for filename in remote_files.keys():
+                if filename in ('.', '..'):
+                    continue
+                print_colored(f"Removing {filename}...", color='cyan')
+                cmd_rm = ['mpremote', 'connect', port, 'rm', filename]
+                result = subprocess.run(cmd_rm, capture_output=True, text=True, timeout=10)
+                if result.returncode != 0:
+                    print_colored(f"Error removing {filename}: {result.stderr}", color='red')
+            print_colored("All files in ESP32 home directory removed.", color='green')
         else:
             print_colored("Dry run: No files were removed. Use --remove to actually delete all files in the ESP32 home directory.", color='yellow')
     except Exception as e:
         print_colored(f"Error removing files: {e}", color='red')
 
+
+
+@cli.command()
+@click.option('--path', default='example_app', show_default=True, help='Directory to create the example app')
+def create(path):
+    """Create an example MicroWeb app with app.py, static/index.html, and README.md."""
+    try:
+        os.makedirs(path, exist_ok=True)
+        os.makedirs(os.path.join(path, 'static'), exist_ok=True)
+        
+        app_content = """import wifi
+from microweb import MicroWeb
+
+# Define a simple User model to store and retrieve user data
+class User:
+    def __init__(self, user_id, name, email):
+        self.user_id = user_id
+        self.name = name
+        self.email = email
+    
+    def to_dict(self):
+        return {
+            'user_id': self.user_id,
+            'name': self.name,
+            'email': self.email
+        }
+
+# Initialize MicroWeb application with debug mode and Wi-Fi access point configuration
+app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
+
+# Define route for the root URL, rendering the index.html template with a welcome message
+@app.route('/')
+def home(req):
+    return app.render_template('index.html', message="Welcome to MicroWeb API!")
+
+# Define API route to return server status and IP address as JSON
+@app.route('/api/status', methods=['GET'])
+def status(req):
+    return app.json_response({"status": "running", "ip": wifi.get_ip()})
+
+# Define API route to get user data using the User model
+@app.route('/api/user/<id>')
+def get_user(req, match):
+    # Extract ID from URL parameter, default to "Anonymous" if not provided
+    id = match.group(1) if match else "Anonymous"
+    # Create a sample user instance (in a real app, this could come from a database)
+    user = User(user_id=id, name=f"User {id}", email=f"user{id}@example.com")
+    return app.json_response(user.to_dict())
+
+# Define API route to greet a user by ID
+@app.route('/greet/<name>')
+def greet(req, match):
+    name = match.group(1) if match else "Anonymous"
+    return {"message": f"Hello, {name}!", "status": "success"}
+
+# Define API route to echo back POST data as JSON
+# @app.route('/api/echo', methods=['POST'])
+# def echo(req):
+#     data = req.form  # Get form data from POST body
+#     return app.json_response({"received": data})
+
+# Define a route that handles both GET and POST requests, returning method-specific JSON responses
+# @app.route('/api/methods', methods=['GET', 'POST'])
+# def methods(req):
+#     if req.method == 'GET':
+#         return app.json_response({"method": "GET", "message": "This is a GET request"})
+#     elif req.method == 'POST':
+#         data = req.json()  # Get JSON data from POST body
+#         return app.json_response({"method": "POST", "received": data})
+
+# Define route for form submission, rendering form.html for GET and result.html for POST
+# @app.route('/submit', methods=['GET', 'POST'])
+# def submit_form(req):
+#     if req.method == 'POST':
+#         return app.render_template('result.html', 
+#                                  data=str(req.form),  # Convert form data to string
+#                                  method="POST")
+#     else:
+#         return app.render_template('form.html')
+
+# Register static file style.css to be served at /style.css
+# app.add_static('/style.css', 'style.css')
+
+# Start the MicroWeb server
+app.run()
+"""
+
+        
+        index_content = """<!DOCTYPE html>
+<html>
+<head>
+    <title>MicroWeb Example</title>
+</head>
+<body>
+    <h1>{% message %}</h1>
+    <p>This is an example MicroWeb application.</p>
+</body>
+</html>
+"""
+        
+        readme_content = """# MicroWeb Example Application
+
+This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It includes a basic web server with a homepage and a status API endpoint.
+
+## Files
+- `app.py`: The main MicroWeb application script.
+- `static/index.html`: The homepage template.
+
+## Setup and Usage
+
+### Prerequisites
+- A MicroPython-compatible device (e.g., ESP32).
+- The `microweb` package installed (`pip install microweb`).
+- A serial port connection (e.g., COM10).
+
+### Flash MicroPython and MicroWeb
+1. Connect your device to your computer.
+2. Flash MicroPython and MicroWeb to your device:
+   ```bash
+   microweb flash --port COM10
+   ```
+   Replace `COM10` with your device's serial port.
+
+### Run the Application
+1. Upload and run the application:
+   ```bash
+   microweb run app.py --port COM10
+   ```
+2. Connect to the Wi-Fi access point:
+   - **SSID**: MyESP32
+   - **Password**: MyPassword
+3. Open a browser and visit `http://192.168.4.1` to see the homepage.
+
+### Additional Commands
+- Set the app to run on boot:
+  ```bash
+  microweb run app.py --port COM10 --add-boot
+  ```
+- Remove all files from the device:
+  ```bash
+  microweb remove --port COM10 --remove
+  ```
+
+For more details, run:
+```bash
+microweb examples
+```
+"""
+        
+        app_path = os.path.join(path, 'app.py')
+        index_path = os.path.join(path, 'static', 'index.html')
+        readme_path = os.path.join(path, 'README.md')
+        
+        with open(app_path, 'w', encoding='utf-8') as f:
+            f.write(app_content)
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(index_content)
+        with open(readme_path, 'w', encoding='utf-8') as f:
+            f.write(readme_content)
+        
+        print_colored(f"Example app created at {path}/", color='green')
+        print_colored(f"  - {app_path}", color='cyan')
+        print_colored(f"  - {index_path}", color='cyan')
+        print_colored(f"  - {readme_path}", color='cyan')
+        print_colored(f"Run with: microweb run {app_path} --port COM10", color='yellow')
+    except Exception as e:
+        print_colored(f"Error creating example app: {e}", color='red')
+
+
+@cli.command()
+@click.option('--port', default=None, help='Serial port, e.g., COM10')
+def ls(port):
+    """List files on the MicroPython device's filesystem."""
+    if not port:
+        ports = [p.device for p in serial.tools.list_ports.comports()]
+        port = ports[0] if ports else None
+    if not port:
+        print_colored("No device found. Specify --port, e.g., --port COM10.", color='red')
+        return
+    try:
+        print_colored(f"Listing files on device at {port}...", color='blue')
+        remote_files = get_remote_file_info(port)
+        if not remote_files:
+            print_colored("No files found or error accessing filesystem.", color='yellow')
+            return
+        print_colored(f"Found {len(remote_files)} files on device:", color='green')
+        for filename, size in sorted(remote_files.items()):
+            print_colored(f"  📄 {filename}: {size} bytes", color='cyan')
+    except Exception as e:
+        print_colored(f"Error listing files: {e}", color='red')
+
+
+
 @cli.command()
 def examples():
-            """Show example commands for using microweb CLI."""
-            print_colored("Example commands for microweb CLI:", color='blue', style='bold')
-            print_colored("\n1. Flash MicroPython and MicroWeb to ESP32:", color='cyan')
-            print_colored("   microweb flash --port COM10", color='green')
-            print_colored("\n2. Upload and run your app.py on ESP32:", color='cyan')
-            print_colored("   microweb run app.py --port COM10", color='green')
-            print_colored("\n3. Check static/template files without uploading:", color='cyan')
-            print_colored("   microweb run app.py --check-only", color='green')
-            print_colored("\n4. Remove all files from ESP32 (DANGEROUS):", color='cyan')
-            print_colored("   microweb remove --port COM10 --remove", color='green')
-            print_colored("\n5. Upload and set app to run on boot:", color='cyan')
-            print_colored("   microweb run app.py --port COM10 --add-boot", color='green')
-            print_colored("\n6. Remove boot.py from ESP32:", color='cyan')
-            print_colored("   microweb run app.py --port COM10 --remove-boot", color='green')
-            print_colored("\nReplace COM10 with your actual ESP32 serial port.", color='yellow')
+    """Show example commands for using microweb CLI."""
+    print_colored("Example commands for microweb CLI:", color='blue', style='bold')
+    print_colored("\n1. Create an example MicroWeb app:", color='cyan')
+    print_colored("   microweb create --path example_app", color='green')
+    print_colored("\n2. Flash MicroPython and MicroWeb to ESP32:", color='cyan')
+    print_colored("   microweb flash --port COM10", color='green')
+    print_colored("\n3. Upload and run your app.py on ESP32:", color='cyan')
+    print_colored("   microweb run app.py --port COM10", color='green')
+    print_colored("\n4. Check static/template files without uploading:", color='cyan')
+    print_colored("   microweb run app.py --check-only", color='green')
+    print_colored("\n5. List files on the ESP32 filesystem:", color='cyan')
+    print_colored("   microweb ls --port COM10", color='green')
+    print_colored("\n6. Remove all files from ESP32 (DANGEROUS):", color='cyan')
+    print_colored("   microweb remove --port COM10 --remove", color='green')
+    print_colored("\n7. Upload and set app to run on boot:", color='cyan')
+    print_colored("   microweb run app.py --port COM10 --add-boot", color='green')
+    print_colored("\n8. Remove boot.py from ESP32:", color='cyan')
+    print_colored("   microweb run app.py --port COM10 --remove-boot", color='green')
+    print_colored("\nReplace COM10 with your actual ESP32 serial port.", color='yellow')
+
 
 
 if __name__ == '__main__':

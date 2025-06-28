@@ -57,6 +57,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Creating an Example Application](#creating-an-example-application)
     - [Flashing the ESP32](#flashing-the-esp32)
     - [Running a Custom Application](#running-a-custom-application)
 - [Example Usage](#example-usage)
@@ -110,32 +111,32 @@ pip install .
 
 ---
 
+
 ## Usage
 
-Flash MicroPython and MicroWeb:
+### Creating an Example Application
+Generate a sample MicroWeb application with a basic web server, template, and documentation:
+
+```bash
+microweb create --path example_app
+```
+
+- Creates a directory (default: `example_app`) containing `app.py`, `static/index.html`, and a `README.md` with usage instructions.
+- Option: `--path <directory>` to specify a custom directory name.
+
+### Flashing MicroPython and MicroWeb
+Flash MicroPython firmware and MicroWeb to your device:
 
 ```bash
 microweb flash --port COM10
 ```
 
 #### Options:
-
-* `--erase`
-  Erase the entire flash memory before flashing firmware.
-
-* `--esp8266`
-  Flash ESP8266 firmware instead of the default ESP32.
-
-* `--firmware firmware.bin`
-  Use a custom `.bin` firmware file. This overrides the default firmware for ESP32 or ESP8266 ( any ).
-
-
-
-
----
+- `--erase`: Erase the entire flash memory before flashing firmware.
+- `--esp8266`: Flash ESP8266 firmware instead of the default ESP32.
+- `--firmware firmware.bin`: Use a custom `.bin` firmware file, overriding the default firmware for ESP32 or ESP8266.
 
 ### Running a Custom Application
-
 Upload and run a MicroPython script:
 
 ```bash
@@ -146,7 +147,17 @@ microweb run app.py --port COM10
 - Uploads and executes the script.
 - Checks and uploads only changed files by default.
 - Prompts to run `microweb flash` if MicroPython is not detected.
-- After running `app.run()`, the ESP32 will host a Wi-Fi access point (AP) if it cannot connect to a configured network. You can then connect your device to this AP and access the web server using the ESP32's IP address (typically `http://192.168.4.1` in AP mode).
+- After running `app.run()`, the ESP32 will host a Wi-Fi access point (AP) if it cannot connect to a configured network. Connect to this AP and access the web server at `http://192.168.4.1` (typical IP in AP mode).
+
+### Listing Files on the Device
+List files on the MicroPython device's filesystem:
+
+```bash
+microweb ls --port COM10
+```
+
+- Displays all files and their sizes in the device's home directory.
+- Requires MicroPython to be installed on the device.
 
 ---
 
@@ -292,23 +303,26 @@ If no credentials are provided, loads `config.json`. If connection fails, starts
 - Use the control panel to update Wi-Fi, test routes, or submit forms.
 
 ---
+
 ## CLI Tool Usage Examples
 
 The following table summarizes common `microweb` CLI commands. See also: #changes.
 
 | Command Example                              | Description                                               |
 |----------------------------------------------|-----------------------------------------------------------|
-| `microweb exmples `                               | Show example commands for using microweb CLI.**          |
+| `microweb create --path example_app`         | Create an example MicroWeb app with `app.py`, `static/index.html`, and `README.md`. |
+| `microweb examples`                          | Show example commands for using the MicroWeb CLI.          |
 | `microweb flash --port COM10`                | Flash MicroPython firmware and upload MicroWeb files.      |
 | `microweb flash --port COM10 --erase`        | Erase ESP32 flash before installing MicroPython.           |
 | `microweb run app.py --port COM10`           | Upload and run a custom MicroPython script.                |
 | `microweb run app.py --check-only`           | Check static/template dependencies without uploading.      |
 | `microweb run app.py --force`                | Force upload all files, even if unchanged.                 |
-| `microweb run app.py --add-boot`             | Uploads a `boot.py` to auto-run your app on boot.          |
-| `microweb run app.py --remove-boot`          | Removes `boot.py` from the ESP32.                          |
+| `microweb run app.py --add-boot`             | Upload a `boot.py` to auto-run your app on boot.           |
+| `microweb run app.py --remove-boot`          | Remove `boot.py` from the ESP32.                           |
 | `microweb run app.py --static static/`       | Specify a custom static files folder.                      |
 | `microweb run app.py --no-stop`              | Do not reset ESP32 before running the app.                 |
 | `microweb run app.py --timeout 600`          | Set a custom timeout (in seconds) for app execution.       |
+| `microweb ls --port COM10`                   | List files and their sizes on the ESP32 filesystem.        |
 | `microweb remove --port COM10`               | List files on ESP32 (requires `--remove` to actually delete). |
 | `microweb remove --port COM10 --remove`      | Remove all files in ESP32 home directory.                  |
 
