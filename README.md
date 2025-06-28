@@ -654,9 +654,7 @@ def projects_empty(req):
     return app.render_template('projects.html', greeting='No Projects Available', projects=[])
 
 app.add_static('/style.css', 'style.css')
-
-if __name__ == '__main__':
-    app.run()
+app.run()
 ```
 
 **Explanation**:
