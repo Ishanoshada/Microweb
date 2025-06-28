@@ -40,7 +40,6 @@ def headers_example(request):
     resp.headers["X-Custom-Header"] = "Value"
     return resp
 
-if __name__ == "__main__":
-    app.run()
+app.run()
 
 

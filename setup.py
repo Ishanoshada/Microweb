@@ -14,7 +14,7 @@ setup(
         'microweb': ['firmware/*', 'static/*']
     },
     # List of dependencies to install with your package
-    install_requires=['pyserial', 'esptool', 'click'],
+    install_requires=['pyserial', 'esptool', 'click', 'adafruit-ampy', 'mpremote'],
     # Define command-line scripts to be generated
     entry_points={
         'console_scripts': [

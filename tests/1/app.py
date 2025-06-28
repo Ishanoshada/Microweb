@@ -1,3 +1,18 @@
+# Note: This code is a simplified example and may not include all features of the original app.
+# Make sure to adapt the routes and functionality as needed for your specific use case.
+# To run this code, ensure you have the `microweb` package installed and run it on a compatible MicroPython device.
+"""
+first run the command:
+```bash
+microweb flash --port COM10
+```
+Then run the app with:
+```bash
+microweb run app.py --port COM10
+```
+
+"""
+
 import wifi
 from microweb import MicroWeb
 

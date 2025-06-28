@@ -46,7 +46,7 @@ def check_micropython(port):
             print_colored(f"mpremote output:\n{result.stdout.strip()}\n{result.stderr.strip()}", color='yellow')
             return False
     except Exception as e:
-        print_colored(f"Error checking MicroPython via mpremote: {e}", color='red')
+        print_colored(f"Error checking MicroPython via mpremote: {e}. The app may be running boot.py.", color='blue')
         return False
 
 def get_remote_file_info(port):
