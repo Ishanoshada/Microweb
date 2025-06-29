@@ -1,0 +1,164 @@
+<svg width="1462pt" height="726pt" viewBox="0.00 0.00 1461.94 725.60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 721.6)">
+<title>MicroWebClassDiagram</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-721.6 1457.94,-721.6 1457.94,4 -4,4"></polygon>
+<!-- MicroWeb -->
+<g id="node1" class="node">
+<title>MicroWeb</title>
+<polygon fill="#d3e6f3" stroke="black" points="975.65,-539.2 693.91,-539.2 693.91,-195.2 975.65,-195.2 975.65,-539.2"></polygon>
+<text text-anchor="middle" x="834.78" y="-522.6" font-family="Helvetica,sans-Serif" font-size="14.00">MicroWeb</text>
+<text text-anchor="middle" x="834.78" y="-505.8" font-family="Helvetica,sans-Serif" font-size="14.00">- routes: dict</text>
+<text text-anchor="middle" x="834.78" y="-489" font-family="Helvetica,sans-Serif" font-size="14.00">- static_files: dict</text>
+<text text-anchor="middle" x="834.78" y="-472.2" font-family="Helvetica,sans-Serif" font-size="14.00">- config: dict</text>
+<text text-anchor="middle" x="834.78" y="-455.4" font-family="Helvetica,sans-Serif" font-size="14.00">- session: dict</text>
+<text text-anchor="middle" x="834.78" y="-438.6" font-family="Helvetica,sans-Serif" font-size="14.00">- _template_cache: dict</text>
+<text text-anchor="middle" x="834.78" y="-421.8" font-family="Helvetica,sans-Serif" font-size="14.00">+ init(ssid, password, port, debug, ap)</text>
+<text text-anchor="middle" x="834.78" y="-405" font-family="Helvetica,sans-Serif" font-size="14.00">+ route(path, methods)</text>
+<text text-anchor="middle" x="834.78" y="-388.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ add_static(path, file_path)</text>
+<text text-anchor="middle" x="834.78" y="-371.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ render_template(template_file, **kwargs)</text>
+<text text-anchor="middle" x="834.78" y="-354.6" font-family="Helvetica,sans-Serif" font-size="14.00">+ json_response(data, status)</text>
+<text text-anchor="middle" x="834.78" y="-337.8" font-family="Helvetica,sans-Serif" font-size="14.00">+ html_response(content, status)</text>
+<text text-anchor="middle" x="834.78" y="-321" font-family="Helvetica,sans-Serif" font-size="14.00">+ redirect(location, status)</text>
+<text text-anchor="middle" x="834.78" y="-304.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ parse_request(request)</text>
+<text text-anchor="middle" x="834.78" y="-287.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ get_content_type(file_path)</text>
+<text text-anchor="middle" x="834.78" y="-270.6" font-family="Helvetica,sans-Serif" font-size="14.00">+ match_route(path, route_pattern)</text>
+<text text-anchor="middle" x="834.78" y="-253.8" font-family="Helvetica,sans-Serif" font-size="14.00">+ handle_request(request)</text>
+<text text-anchor="middle" x="834.78" y="-237" font-family="Helvetica,sans-Serif" font-size="14.00">+ run()</text>
+<text text-anchor="middle" x="834.78" y="-220.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ start_wifi()</text>
+<text text-anchor="middle" x="834.78" y="-203.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ stop_wifi()</text>
+</g>
+<!-- Request -->
+<g id="node2" class="node">
+<title>Request</title>
+<polygon fill="#a4c8e1" stroke="black" points="303.55,-117.2 0,-117.2 0,-8.4 303.55,-8.4 303.55,-117.2"></polygon>
+<text text-anchor="middle" x="151.78" y="-100.6" font-family="Helvetica,sans-Serif" font-size="14.00">Request</text>
+<text text-anchor="middle" x="151.78" y="-83.8" font-family="Helvetica,sans-Serif" font-size="14.00">- method: str</text>
+<text text-anchor="middle" x="151.78" y="-67" font-family="Helvetica,sans-Serif" font-size="14.00">- path: str</text>
+<text text-anchor="middle" x="151.78" y="-50.2" font-family="Helvetica,sans-Serif" font-size="14.00">- query_params: dict</text>
+<text text-anchor="middle" x="151.78" y="-33.4" font-family="Helvetica,sans-Serif" font-size="14.00">- form: dict</text>
+<text text-anchor="middle" x="151.78" y="-16.6" font-family="Helvetica,sans-Serif" font-size="14.00">+ init(method, path, query_params, post_data)</text>
+</g>
+<!-- MicroWeb&#45;&gt;Request -->
+<g id="edge2" class="edge">
+<title>MicroWeb-&gt;Request</title>
+<path fill="none" stroke="black" d="M693.67,-367.2C493.68,-367.2 151.78,-367.2 151.78,-367.2 151.78,-367.2 151.78,-129.09 151.78,-129.09"></path>
+<polygon fill="black" stroke="black" points="155.28,-129.09 151.78,-119.09 148.28,-129.09 155.28,-129.09"></polygon>
+<text text-anchor="middle" x="171.2" y="-156.2" font-family="Times,serif" font-size="14.00">creates</text>
+</g>
+<!-- Response -->
+<g id="node3" class="node">
+<title>Response</title>
+<polygon fill="#a4c8e1" stroke="black" points="614.11,-125.6 321.44,-125.6 321.44,0 614.11,0 614.11,-125.6"></polygon>
+<text text-anchor="middle" x="467.78" y="-109" font-family="Helvetica,sans-Serif" font-size="14.00">Response</text>
+<text text-anchor="middle" x="467.78" y="-92.2" font-family="Helvetica,sans-Serif" font-size="14.00">- content: str</text>
+<text text-anchor="middle" x="467.78" y="-75.4" font-family="Helvetica,sans-Serif" font-size="14.00">- status: int</text>
+<text text-anchor="middle" x="467.78" y="-58.6" font-family="Helvetica,sans-Serif" font-size="14.00">- content_type: str</text>
+<text text-anchor="middle" x="467.78" y="-41.8" font-family="Helvetica,sans-Serif" font-size="14.00">- headers: dict</text>
+<text text-anchor="middle" x="467.78" y="-25" font-family="Helvetica,sans-Serif" font-size="14.00">+ init(content, status, content_type, headers)</text>
+<text text-anchor="middle" x="467.78" y="-8.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ to_http_response()</text>
+</g>
+<!-- MicroWeb&#45;&gt;Response -->
+<g id="edge3" class="edge">
+<title>MicroWeb-&gt;Response</title>
+<path fill="none" stroke="black" d="M738.56,-194.83C738.56,-149.5 738.56,-113 738.56,-113 738.56,-113 625.78,-113 625.78,-113"></path>
+<polygon fill="black" stroke="black" points="625.78,-109.5 615.78,-113 625.78,-116.5 625.78,-109.5"></polygon>
+<text text-anchor="middle" x="487.2" y="-156.2" font-family="Times,serif" font-size="14.00">creates</text>
+</g>
+<!-- FileResponse -->
+<g id="node4" class="node">
+<title>FileResponse</title>
+<polygon fill="#a4c8e1" stroke="black" points="827.86,-100.4 631.69,-100.4 631.69,-25.2 827.86,-25.2 827.86,-100.4"></polygon>
+<text text-anchor="middle" x="729.78" y="-83.8" font-family="Helvetica,sans-Serif" font-size="14.00">FileResponse</text>
+<text text-anchor="middle" x="729.78" y="-67" font-family="Helvetica,sans-Serif" font-size="14.00">- file_path: str</text>
+<text text-anchor="middle" x="729.78" y="-50.2" font-family="Helvetica,sans-Serif" font-size="14.00">- content_type: str</text>
+<text text-anchor="middle" x="729.78" y="-33.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ init(file_path, content_type)</text>
+</g>
+<!-- MicroWeb&#45;&gt;FileResponse -->
+<g id="edge4" class="edge">
+<title>MicroWeb-&gt;FileResponse</title>
+<path fill="none" stroke="black" d="M783.21,-194.99C783.21,-194.99 783.21,-112.31 783.21,-112.31"></path>
+<polygon fill="black" stroke="black" points="786.71,-112.31 783.21,-102.31 779.71,-112.31 786.71,-112.31"></polygon>
+<text text-anchor="middle" x="749.2" y="-156.2" font-family="Times,serif" font-size="14.00">creates</text>
+</g>
+<!-- WiFi -->
+<g id="node5" class="node">
+<title>WiFi</title>
+<polygon fill="#f3e6d1" stroke="black" points="1033.57,-100.4 845.98,-100.4 845.98,-25.2 1033.57,-25.2 1033.57,-100.4"></polygon>
+<text text-anchor="middle" x="939.78" y="-83.8" font-family="Helvetica,sans-Serif" font-size="14.00">WiFi</text>
+<text text-anchor="middle" x="939.78" y="-67" font-family="Helvetica,sans-Serif" font-size="14.00">+ setup_ap(ssid, password)</text>
+<text text-anchor="middle" x="939.78" y="-50.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ get_ip()</text>
+<text text-anchor="middle" x="939.78" y="-33.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ stop_ap()</text>
+</g>
+<!-- MicroWeb&#45;&gt;WiFi -->
+<g id="edge1" class="edge">
+<title>MicroWeb-&gt;WiFi</title>
+<path fill="none" stroke="black" d="M910.81,-194.99C910.81,-194.99 910.81,-112.31 910.81,-112.31"></path>
+<polygon fill="black" stroke="black" points="914.31,-112.31 910.81,-102.31 907.31,-112.31 914.31,-112.31"></polygon>
+<text text-anchor="middle" x="988.97" y="-156.2" font-family="Times,serif" font-size="14.00">uses for AP setup</text>
+</g>
+<!-- many -->
+<g id="node8" class="node">
+<title>many</title>
+<polygon fill="lightgrey" stroke="black" points="1105.78,-80.8 1051.78,-80.8 1051.78,-44.8 1105.78,-44.8 1105.78,-80.8"></polygon>
+<text text-anchor="middle" x="1078.78" y="-58.6" font-family="Helvetica,sans-Serif" font-size="14.00">many</text>
+</g>
+<!-- MicroWeb&#45;&gt;many -->
+<g id="edge7" class="edge">
+<title>MicroWeb-&gt;many</title>
+<path fill="none" stroke="black" d="M976.01,-240C1029.97,-240 1078.78,-240 1078.78,-240 1078.78,-240 1078.78,-92.61 1078.78,-92.61"></path>
+<polygon fill="black" stroke="black" points="1082.28,-92.61 1078.78,-82.61 1075.28,-92.61 1082.28,-92.61"></polygon>
+<text text-anchor="middle" x="1164.69" y="-164.6" font-family="Times,serif" font-size="14.00">File</text>
+<text text-anchor="middle" x="1164.69" y="-147.8" font-family="Times,serif" font-size="14.00">processes templates/static files</text>
+</g>
+<!-- note -->
+<g id="node9" class="node">
+<title>note</title>
+<polygon fill="#e9e3da" stroke="black" points="1447.94,-83.6 1123.62,-83.6 1123.62,-42 1453.94,-42 1453.94,-77.6 1447.94,-83.6"></polygon>
+<polyline fill="none" stroke="black" points="1447.94,-83.6 1447.94,-77.6"></polyline>
+<polyline fill="none" stroke="black" points="1453.94,-77.6 1447.94,-77.6"></polyline>
+<text text-anchor="middle" x="1288.78" y="-67" font-family="Helvetica,sans-Serif" font-size="14.00">MicroWeb framework for ESP32 with MicroPython.</text>
+<text text-anchor="middle" x="1288.78" y="-50.2" font-family="Helvetica,sans-Serif" font-size="14.00">Source: https://github.com/Ishanoshad</text>
+</g>
+<!-- MicroWeb&#45;&gt;note -->
+<g id="edge8" class="edge">
+<title>MicroWeb-&gt;note</title>
+<path fill="none" stroke="black" d="M976.04,-284.8C1075.71,-284.8 1191.56,-284.8 1191.56,-284.8 1191.56,-284.8 1191.56,-95.6 1191.56,-95.6"></path>
+<polygon fill="black" stroke="black" points="1195.06,-95.6 1191.56,-85.6 1188.06,-95.6 1195.06,-95.6"></polygon>
+</g>
+<!-- Uploader -->
+<g id="node6" class="node">
+<title>Uploader</title>
+<polygon fill="#f3e6d1" stroke="black" points="1259.5,-404.8 994.06,-404.8 994.06,-329.6 1259.5,-329.6 1259.5,-404.8"></polygon>
+<text text-anchor="middle" x="1126.78" y="-388.2" font-family="Helvetica,sans-Serif" font-size="14.00">Uploader</text>
+<text text-anchor="middle" x="1126.78" y="-371.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ upload_file(file_path, port, destination)</text>
+<text text-anchor="middle" x="1126.78" y="-354.6" font-family="Helvetica,sans-Serif" font-size="14.00">+ create_directory(dir_name, port)</text>
+<text text-anchor="middle" x="1126.78" y="-337.8" font-family="Helvetica,sans-Serif" font-size="14.00">+ verify_files(port, expected_files)</text>
+</g>
+<!-- CLI -->
+<g id="node7" class="node">
+<title>CLI</title>
+<polygon fill="#f3d3d1" stroke="black" points="1246.56,-717.6 715,-717.6 715,-592 1246.56,-592 1246.56,-717.6"></polygon>
+<text text-anchor="middle" x="980.78" y="-701" font-family="Helvetica,sans-Serif" font-size="14.00">CLI</text>
+<text text-anchor="middle" x="980.78" y="-684.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ flash(port, erase, esp8266, firmware)</text>
+<text text-anchor="middle" x="980.78" y="-667.4" font-family="Helvetica,sans-Serif" font-size="14.00">+ run(file, port, check_only, static, force, no_stop, timeout, add_boot, remove_boot)</text>
+<text text-anchor="middle" x="980.78" y="-650.6" font-family="Helvetica,sans-Serif" font-size="14.00">+ remove(port, remove_everything)</text>
+<text text-anchor="middle" x="980.78" y="-633.8" font-family="Helvetica,sans-Serif" font-size="14.00">+ create(path)</text>
+<text text-anchor="middle" x="980.78" y="-617" font-family="Helvetica,sans-Serif" font-size="14.00">+ ls(port)</text>
+<text text-anchor="middle" x="980.78" y="-600.2" font-family="Helvetica,sans-Serif" font-size="14.00">+ examples()</text>
+</g>
+<!-- CLI&#45;&gt;MicroWeb -->
+<g id="edge6" class="edge">
+<title>CLI-&gt;MicroWeb</title>
+<path fill="none" stroke="black" d="M845.32,-591.68C845.32,-591.68 845.32,-551.04 845.32,-551.04"></path>
+<polygon fill="black" stroke="black" points="848.82,-551.04 845.32,-541.04 841.82,-551.04 848.82,-551.04"></polygon>
+<text text-anchor="middle" x="969.8" y="-561.4" font-family="Times,serif" font-size="14.00">uploads and runs apps</text>
+</g>
+<!-- CLI&#45;&gt;Uploader -->
+<g id="edge5" class="edge">
+<title>CLI-&gt;Uploader</title>
+<path fill="none" stroke="black" d="M1120.31,-591.68C1120.31,-591.68 1120.31,-416.57 1120.31,-416.57"></path>
+<polygon fill="black" stroke="black" points="1123.81,-416.57 1120.31,-406.57 1116.81,-416.57 1123.81,-416.57"></polygon>
+<text text-anchor="middle" x="1190.73" y="-561.4" font-family="Times,serif" font-size="14.00">uses for file operations</text>
+</g>
+</g>
+</svg>

@@ -844,7 +844,7 @@ app.run()
 
 ### Feature Updates
 
-- Improved CLI usability and error messages.
+- Improvsed CLI usability and error messages.
 - Added support for static file serving and template rendering.
 - Enhanced Wi-Fi configuration with fallback AP mode.
 - Added validation for MicroPython firmware before running scripts.
@@ -863,6 +863,7 @@ app.run()
 
 ## Project Structure
 
+![img2](/src/uml2.svg)
 
 ```
 microweb/
