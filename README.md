@@ -318,8 +318,8 @@ def empty(req):
 
 app.add_static('/style.css', 'style.css')
 
-if __name__ == '__main__':
-    app.run()
+
+app.run()
 ```
 
 **Example Template (`tests/for_loops/static/index.html`)**:

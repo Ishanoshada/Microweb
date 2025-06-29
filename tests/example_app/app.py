@@ -60,6 +60,5 @@ def greet(req, match):
 app.add_static('/style.css', 'style.css')
 app.add_static('/script.js', 'script.js')
 
-# Start the MicroWeb server
-if __name__ == '__main__':
-    app.run()
+
+app.run()
