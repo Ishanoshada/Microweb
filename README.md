@@ -194,6 +194,10 @@ from microweb import MicroWeb, Response
 
 app = MicroWeb(debug=True, ap={'ssid': 'MyWiFi', 'password': 'MyPassword'})
 
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+## app.start_wifi()  # Uncomment to start Wi-Fi access point after stop
+
 @app.route("/")
 def home(request):
     return Response("Hello from MicroWeb!", content_type="text/plain")
@@ -474,6 +478,12 @@ from microweb import MicroWeb
 
 # Initialize MicroWeb with debug mode and access point (AP) settings
 app = MicroWeb(debug=True, ap={'ssid': 'MyESP32', 'password': 'mypassword'})
+
+
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+## app.start_wifi()  # Uncomment to start Wi-Fi access point after stop
+
 ```
 
 **Explanation**:
@@ -722,6 +732,11 @@ from microweb import MicroWeb
 
 app = MicroWeb(debug=True, ap={'ssid': 'MyESP32', 'password': 'mypassword'})
 
+
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+## app.start_wifi()  # Uncomment to start Wi-Fi access point after stop
+
 @app.route('/api/status', methods=['GET'])
 def status(req):
     return app.json_response({'status': 'running', 'ip': wifi.get_ip()})
@@ -750,9 +765,11 @@ app.run()
 - **Error Handling**: Add try-except blocks for `wifi.get_ip()` or `req.form` to handle network or input errors.
   ```python
   try:
-      ip = wifi.get_ip()
-      #app.stop_wifi()
-      #app.start_wifi()
+        ip = wifi.get_ip()
+      
+        # Uncomment to stop Wi-Fi access point
+        # app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+        ## app.start_wifi()  # Uncomment to start Wi-Fi access point after stop
   except Exception as e:
       ip = 'N/A'
   return app.json_response({'status': 'running', 'ip': ip})
