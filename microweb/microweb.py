@@ -219,6 +219,25 @@ class MicroWeb:
             
         wifi.setup_ap(ap_ssid, ap_password)
     
+    def stop_wifi(self):
+        try:
+            """Stop the Wi-Fi Access Point."""
+            
+            wifi.stop_ap()
+            return {"success": True, "message": "Wi-Fi Access Point stopped."}
+        except Exception as e:
+            return {"success": False, "message": f"Failed to stop Wi-Fi Access Point: {str(e)}"}
+
+    def start_wifi(self):
+        try:
+            """Start the Wi-Fi Access Point."""
+            wifi.setup_ap(self.config.get('ssid', 'ESP32-MicroWeb'), 
+                        self.config.get('password', '12345678'))
+            return {"success": True, "message": "Wi-Fi Access Point started."}
+        except Exception as e:
+            return {"success": False, "message": f"Failed to start Wi-Fi Access Point: {str(e)}"}
+    
+
     def route(self, path, methods=['GET']):
         def decorator(func):
             self.routes[path] = {'func': func, 'methods': methods}
@@ -419,6 +438,8 @@ class MicroWeb:
         
         return Response('<h1>404 Not Found</h1><p>Page not found</p>', 
                       status=404).to_http_response()
+    
+
     
     def run(self):
         s = socket.socket()

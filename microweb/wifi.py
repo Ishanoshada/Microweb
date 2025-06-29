@@ -36,3 +36,15 @@ def get_ip():
     if ap.active():
         return ap.ifconfig()[0]
     return None
+
+def stop_ap():
+    """Deactivate the ESP32 Access Point."""
+    ap = network.WLAN(network.AP_IF)
+    if ap.active():
+        ap.active(False)
+        print("=" * 40)
+        print("ESP32 Access Point Stopped!")
+        print("=" * 40)
+    else:
+        print("Access Point is already stopped.")
+        

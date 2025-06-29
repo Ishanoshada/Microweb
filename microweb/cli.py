@@ -601,9 +601,15 @@ def greet(req, match):
 app.add_static('/style.css', 'style.css')
 app.add_static('/script.js', 'script.js')
 
+
+## app.start_wifi()  # Uncomment to start Wi-Fi access point
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+
 # Start the MicroWeb server
-if __name__ == '__main__':
-    app.run()
+app.run()
+
+
 """
 
         index_content = """<!DOCTYPE html>

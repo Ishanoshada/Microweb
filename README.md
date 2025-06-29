@@ -217,8 +217,8 @@ def headers_example(request):
     resp.headers["X-Custom-Header"] = "Value"
     return resp
 
-if __name__ == "__main__":
-    app.run()
+
+app.run()
 ```
 
 ---
@@ -655,8 +655,8 @@ def projects_empty(req):
 
 app.add_static('/style.css', 'style.css')
 
-if __name__ == '__main__':
-    app.run()
+
+app.run()
 ```
 
 **Explanation**:
@@ -732,8 +732,8 @@ def status(req):
 Start the web server with `app.run()`.
 
 ```python
-if __name__ == '__main__':
-    app.run()
+
+app.run()
 ```
 
 **Explanation**:
@@ -748,6 +748,8 @@ if __name__ == '__main__':
   ```python
   try:
       ip = wifi.get_ip()
+      #app.stop_wifi()
+      #app.start_wifi()
   except Exception as e:
       ip = 'N/A'
   return app.json_response({'status': 'running', 'ip': ip})
@@ -788,8 +790,8 @@ def submit_form(req):
 
 app.add_static('/style.css', 'style.css')
 
-if __name__ == '__main__':
-    app.run()
+
+app.run()
 ```
 
 **Explanation**:
