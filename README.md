@@ -165,6 +165,12 @@ microweb ls --port COM10
 
 ---
 
+### View real-time logs:
+   ```bash
+   mpremote connect COM10 run tests/request_send/app.py
+   ```
+
+
 ### Boot Script Management
 
 You can configure your ESP32 to automatically start your application after any power cycle or reset by managing the `boot.py` file:
@@ -1175,15 +1181,6 @@ microweb/
 
 
 
-
----
-
-## Troubleshooting
-
-- **Port Issues**: Specify `--port COM10` if auto-detection fails.
-- **MicroPython Missing**: Run `microweb flash`.
-- **Wi-Fi Failure**: Verify credentials or connect to default AP.
-- **File Errors**: Ensure `app.py` and static files exist.
 
 ---
 

@@ -555,6 +555,13 @@ from microweb import MicroWeb
 # Initialize MicroWeb application with debug mode and Wi-Fi access point configuration
 app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
 
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
+
+
 @app.route('/')
 def home(req):
     # Test case 1: Populated projects list
@@ -693,6 +700,7 @@ This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It 
 - `static/style.css`: CSS styles for the project list.
 - `static/script.js`: Basic JavaScript for interactivity.
 - `README.md`: This file.
+
 
 ## Setup and Usage
 

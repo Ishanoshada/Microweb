@@ -4,6 +4,13 @@ from microweb import MicroWeb
 # Initialize MicroWeb application with debug mode and Wi-Fi access point configuration
 app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
 
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
+
+
 @app.route('/')
 def home(req):
     # Test case 1: Populated projects list
@@ -61,4 +68,11 @@ app.add_static('/style.css', 'style.css')
 app.add_static('/script.js', 'script.js')
 
 
+## app.start_wifi()  # Uncomment to start Wi-Fi access point
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+
+# Start the MicroWeb server
 app.run()
+
+

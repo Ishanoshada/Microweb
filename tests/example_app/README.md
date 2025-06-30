@@ -9,6 +9,7 @@ This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It 
 - `static/script.js`: Basic JavaScript for interactivity.
 - `README.md`: This file.
 
+
 ## Setup and Usage
 
 ### Prerequisites
