@@ -199,25 +199,33 @@ def render_nodes(nodes, context):
     
     return ''.join(output)
 
+    
 class MicroWeb:
-    def __init__(self, ssid=None, password=None, port=80, debug=False, ap=None):
+    def __init__(self, ssid=None, password=None, port=80, debug=False, ap=None, mode="ap"):
         self.routes = {}
         self.static_files = {}
         self.config = {'port': port, 'debug': debug}
         self.session = {}
         self._template_cache = {}
-        
-        if ap and isinstance(ap, dict) and 'ssid' in ap:
-            ap_ssid = ap.get('ssid', 'ESP32-MicroWeb')
-            ap_password = ap.get('password', '12345678')
-        elif ssid and password:
-            ap_ssid = ssid
-            ap_password = password
+
+        ip = None
+
+        if ap and isinstance(ap, dict):
+            ssid = ap.get('ssid', 'ESP32-MicroWeb')
+            password = ap.get('password', '12345678')
+
+        if mode == "wifi":
+            ip = wifi.connect_wifi(ssid, password)
+            if not ip:
+                print("[Fallback] Failed to connect to WiFi. Starting Access Point instead.")
+                ip = wifi.setup_ap(ssid, password)
         else:
-            ap_ssid = 'ESP32-MicroWeb'
-            ap_password = '12345678'
-            
-        wifi.setup_ap(ap_ssid, ap_password)
+            ip = wifi.setup_ap(ssid, password)
+
+        self.config['ip'] = ip
+        self.config['ssid'] = ssid
+        self.config['password'] = password
+
     
     def stop_wifi(self):
         try:
@@ -267,6 +275,9 @@ class MicroWeb:
             if self.config['debug']:
                 print(f'Template error: {e}')
             return f'<h1>Template Error</h1><p>Error in {template_file}: {str(e)}</p>'
+    
+    def get_ip(self):
+        return self.config.get('ip', '0.0.0.0')
 
     def json_response(self, data, status=200):
         return Response(ujson.dumps(data), status=200, content_type='application/json')

@@ -66,6 +66,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
     - [Static Files and Templates Example (`tests/1/app.py`)](#static-files-and-templates-example-tests1apppy)
     - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
     - [For Loop Example](#for-loop-example-testsfor_loops)
+    - [External API and Template Example](#external-api-and-template-example-testsrequest_send)
 - [Wi-Fi Configuration](#wi-fi-configuration)
 - [Accessing the Web Server](#accessing-the-web-server)
 - [CLI Tool Usage Examples](#cli-tool-usage-examples)
@@ -81,7 +82,7 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 ## Features
 
 - **Dynamic Routing**: Define routes like `@app.route('/welcome/<name>')` for flexible URL handling.
-- **Wi-Fi Configuration**: Configure Wi-Fi via constructor parameters, an `internet` dictionary, or a web interface, with settings saved to `config.json`.
+- **Wi-Fi Configuration**: Configure Wi-Fi via constructor parameters, an `ap` dictionary, or a web interface, with settings saved to `config.json`.
 - **Query Parameters and POST Handling**: Support for URL query strings and form/JSON POST requests.
 - **JSON Responses**: Return JSON data with customizable HTTP status codes.
 - **Static File Serving**: Serve HTML, CSS, and other files from `static/`.
@@ -183,7 +184,15 @@ You can configure your ESP32 to automatically start your application after any p
 ---
 
 
-
+**Checking the IP Address**:
+- When running `microweb run app.py --port COM10`, the CLI displays the ESP32’s IP address (e.g., `🌐 🌐 Visit: http://192.168.4.1 or http://192.168.8.102/`).
+- Alternatively, run `mpremote connect COM10 exec "import app; print(app.app.get_ip())"` to retrieve the IP.
+- Check your router’s admin panel (e.g., `http://192.168.8.1`) for connected devices to find the ESP32’s IP.
+- To view real-time logs, run:
+  ```bash
+  mpremote connect COM10 run app.py
+  ```
+  This prints logs like `Connecting to WiFi SSID: Dialog 4G 0F8`, `Connected. IP: 192.168.8.102`.
 
 ## Example Usage
 
@@ -193,6 +202,12 @@ You can configure your ESP32 to automatically start your application after any p
 from microweb import MicroWeb, Response
 
 app = MicroWeb(debug=True, ap={'ssid': 'MyWiFi', 'password': 'MyPassword'})
+
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
 
 # Uncomment to stop Wi-Fi access point
 # app.stop_wifi()  # Uncomment to stop Wi-Fi access point
@@ -234,6 +249,11 @@ import wifi
 from microweb import MicroWeb
 
 app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
 
 @app.route('/')
 def home(req):
@@ -303,6 +323,11 @@ from microweb import MicroWeb
 
 # Initialize MicroWeb with debug mode and access point
 app = MicroWeb(debug=True, ap={'ssid': 'MyESP32', 'password': 'mypassword'})
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
 
 @app.route('/')
 def home(req):
@@ -415,13 +440,280 @@ p {
 
 ---
 
-## Wi-Fi Configuration
+### *External API and Template Example (`tests/request_send/`)*
+
+This example, located in the `tests/request_send/` folder, demonstrates a MicroWeb application that:
+- Connects to a Wi-Fi network (`mode='wifi'`) using the `Dialog 4G 0F8` network.
+- Fetches data from an external API using `urequests` (with a fallback for HTTPS limitations).
+- Renders a dynamic template (`index.html`) with a project list.
+- Serves static files (`style.css`, `script.js`) for styling and client-side scripting.
+- Includes routes for status checks, POST requests, and an offline fallback.
+
+**Application Code (`tests/request_send/app.py`)**:
+
+```python
+from microweb import MicroWeb
+import urequests
+
+# This example demonstrates how to create a simple web server using MicroWeb on ESP32
+# It includes routes for home, status check, POST handling, and live site mirroring.
+# Make sure you have the MicroWeb library installed on your ESP32
+# To run this, save it as app.py on your ESP32 and ensure you have the necessary files in the same directory:
+# - index.html (for home page)
+# - mirror.html (for offline fallback)
+# - style.css (for styling)
+# - script.js (for client-side scripting)
+
+app = MicroWeb(
+    ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+    debug=True,
+    mode="wifi"  # Connect as client to your router
+)
+
+# Home route
+@app.route('/')
+def home(req):
+    return app.render_template('index.html', greeting='Welcome to ESP32 MicroWeb!', projects=[
+        {'title': 'Request Example', 'description': 'Live fetch from JSONPlaceholder /request'},
+        {'title': 'Status Check', 'description': 'Check server status'},
+        {'title': 'POST Example', 'description': 'Send POST to /post-test'}
+    ])
+
+# /status route
+@app.route('/status', methods=['GET'])
+def status(req):
+    return app.json_response({
+        "status": "running",
+        "ip": app.get_ip(),
+        "mode": "wifi"
+    })
+
+# POST test
+@app.route('/post-test', methods=['POST'])
+def post_test(req):
+    return app.json_response({
+        "received": req.form,
+        "note": "You sent this via POST"
+    })
+
+# Live mirror of your site
+@app.route('/request')
+def mirror(req):
+    try:
+        res = urequests.get("https://jsonplaceholder.typicode.com/posts/1")  # Only works if HTTPS supported
+        html = res.text
+        res.close()
+        return app.html_response(html)
+    except Exception as e:
+        return app.html_response(f"""
+            <h1>Failed to fetch live site</h1>
+            <p>{str(e)}</p>
+            <p>ESP32 doesn't support HTTPS by default. Use a proxy or offline HTML instead.</p>
+        """)
+
+# Optional fallback if you save HTML locally
+@app.route('/offline')
+def offline(req):
+    return app.render_template("mirror.html")
+
+# Static files
+app.add_static('/style.css', 'style.css')
+app.add_static('/script.js', 'script.js')
+
+app.run()
+```
+
+**Template (`tests/request_send/index.html`)**:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MicroWeb</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/script.js"></script>
+</head>
+<body>
+    <h1>{% greeting %}</h1>
+    {{ if projects }}
+        <ul>
+        {{ for project in projects }}
+            <li>{{ project.title }}: {{ project.description }}</li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No projects found.</p>
+    {{ endif }}
+</body>
+</html>
+```
+
+**Static CSS (`tests/request_send/style.css`)**:
+
+```css
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #f7f7f7;
+}
+h1 {
+    color: #007BFF;
+}
+ul {
+    padding: 0;
+    list-style: none;
+}
+li {
+    background: white;
+    margin: 10px 0;
+    padding: 10px;
+    border-left: 5px solid #007BFF;
+}
+```
+
+**Static JavaScript (`tests/request_send/script.js`)**:
+
+```javascript
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("📡 MicroWeb loaded from ESP32!");
+});
+```
+
+**Explanation**:
+- **Wi-Fi Configuration**: Uses `mode='wifi'` to connect to the `Dialog 4G 0F8` network (IP: `192.168.8.102`). If the connection fails, it falls back to an access point (IP: `192.168.4.1`).
+- **Routes**:
+  - `/`: Renders `index.html` with a greeting and a list of projects using a `for` loop and `if` conditional.
+  - `/status`: Returns a JSON response with the server’s IP and status.
+  - `/post-test`: Handles POST requests, returning the submitted form data as JSON.
+  - `/request`: Attempts to fetch data from `https://jsonplaceholder.typicode.com/posts/1` using `urequests.get()`. If HTTPS fails (common on ESP32), it returns an error message.
+  - `/offline`: Renders a local `mirror.html` file as a fallback (ensure `mirror.html` exists in `static/`).
+- **Static Files**: Serves `style.css` for styling and `script.js` for client-side scripting (logs a message to the browser console).
+- **Template**: `index.html` displays a greeting and a styled list of projects, with a fallback message if no projects are provided.
+- **HTTPS Limitation**: The `/request` route may fail due to MicroPython’s limited HTTPS support on ESP32. The error message suggests using a proxy or offline HTML (`/offline`).
+
+**Running**:
+1. Place `app.py`, `index.html`, `style.css`, `script.js`, and `mirror.html` (if used) in `tests/request_send/` (with `index.html`, `style.css`, `script.js` in `tests/request_send/static/`).
+2. Upload and run:
+   ```bash
+   microweb run tests/request_send/app.py --port COM10 --static tests/request_send/static/
+   ```
+3. Access the server at `http://192.168.8.102` (or `http://192.168.4.1` if Wi-Fi connection fails).
+4. View real-time logs:
+   ```bash
+   mpremote connect COM10 run tests/request_send/app.py
+   ```
+   Expected logs:
+   ```
+   Connecting to WiFi SSID: Dialog 4G 0F8
+   Connected. IP: 192.168.8.102
+   MicroWeb running on http://0.0.0.0:80
+   ```
+
+**Testing**:
+- **Home Page**: `http://192.168.8.102/` displays a styled project list:
+  ```html
+  <h1>Welcome to ESP32 MicroWeb!</h1>
+  <ul>
+    <li>Request Example: Live fetch from JSONPlaceholder /request</li>
+    <li>Status Check: Check server status</li>
+    <li>POST Example: Send POST to /post-test</li>
+  </ul>
+  ```
+- **Status**: Test with `curl`:
+  ```bash
+  curl http://192.168.8.102/status
+  ```
+  Expected:
+  ```json
+  {"status": "running", "ip": "192.168.8.102", "mode": "wifi"}
+  ```
+- **POST**: Test with `curl`:
+  ```bash
+  curl -X POST -d "key=value" http://192.168.8.102/post-test
+  ```
+  Expected:
+  ```json
+  {"received": {"key": "value"}, "note": "You sent this via POST"}
+  ```
+- **Fetch**: Test `/request`:
+  ```bash
+  curl http://192.168.8.102/request
+  ```
+  - If HTTPS works: Returns JSON data from `jsonplaceholder.typicode.com`.
+  - If HTTPS fails: Returns an HTML error message.
+- **Offline**: Test `/offline` (requires `mirror.html`):
+  ```bash
+  curl http://192.168.8.102/offline
+  ```
+
+**Notes**:
+- Ensure `urequests` is available on the ESP32 (bundled with MicroWeb or uploaded separately).
+- If HTTPS fails on `/request`, create a `mirror.html` file in `static/` for the `/offline` route.
+- Verify files with:
+  ```bash
+  microweb ls --port COM10
+  ```
+- Force re-upload if needed:
+  ```bash
+  microweb run tests/request_send/app.py --port COM10 --static tests/request_send/static/ --force
+  ```
+
+---
+
+### How to Apply
+- **Add to `README.md`**:
+  - Append the **External API and Template Example** subsection above to the **Example Usage** section, after the **HTTP Request Example**.
+  - Keep the **Wi-Fi Configuration** and other subsections unchanged.
+- **Set Up Files**:
+  - Create the `tests/request_send/` folder.
+  - Save `app.py` in `tests/request_send/`.
+  - Create `tests/request_send/static/` and save `index.html`, `style.css`, and `script.js` there.
+  - Optionally, add `mirror.html` to `static/` for the `/offline` route (e.g., a simple HTML file with placeholder content).
+- **Run and Test**:
+  - Upload and run:
+    ```bash
+    microweb run tests/request_send/app.py --port COM10 --static tests/request_send/static/
+    ```
+  - Access `http://192.168.8.102/` and other routes.
+  - Check logs with:
+    ```bash
+    mpremote connect COM10 run tests/request_send/app.py
+    ```
+
+### Wi-Fi Configuration
 
 Configure Wi-Fi via:
 
-- Parameters: `MicroWeb(ssid='MyWiFi', password='MyPassword')`
+- **Station Mode (Connect to Existing Network)**:
+  ```python
+  MicroWeb(mode='wifi', ap={'ssid': 'MyWiFi', 'password': 'MyPassword'})
+  ```
+  - Connects the ESP32 to an existing Wi-Fi network (e.g., your router) using the provided SSID and password.
+  - The ESP32 will be assigned an IP address by the network (e.g., `192.168.8.102`). Access the web server at `http://<ESP32-IP>/` (check the IP in the CLI output or your router’s admin panel).
+  - If the connection fails, the ESP32 falls back to creating an access point (default: SSID `ESP32-MicroWeb`, password `12345678`, IP `192.168.4.1`).
 
-If no credentials are provided, loads `config.json`. If connection fails, starts an access point (default: SSID `ESP32-MicroWeb`, password `12345678`).
+- **Access Point Mode**:
+  ```python
+  MicroWeb(mode='ap', ap={'ssid': 'MyESP32', 'password': 'mypassword'})
+  ```
+  - Creates a Wi-Fi access point hosted by the ESP32. Connect to this network and access the server at `http://192.168.4.1`.
+
+- **Configuration File**:
+  If no credentials are provided, MicroWeb loads settings from `config.json` on the ESP32. Use the web interface (at `http://<ESP32-IP>/`) to update Wi-Fi settings if supported.
+
+
+
+---
+
+
+### Troubleshooting
+- **Wrong IP (`192.168.4.1`)**: If the CLI shows `192.168.4.1` instead of `192.168.8.102`, the ESP32 failed to connect to `Dialog 4G ANY`. Verify the SSID/password or check the router’s connected devices.
+- **No Logs**: Ensure `mpremote` is installed (`pip install mpremote`) and `COM10` is correct (`mpremote` to list ports).
+- **File Issues**: Verify `app.py` and `wifi.py` are uploaded:
+  ```bash
+  microweb ls --port COM10
+  ```
+
 
 ---
 

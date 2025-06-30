@@ -470,7 +470,17 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     pass
                 if ssid and password:
                     print_colored(f"📶 Connect to SSID: {ssid}, Password: {password}", color='cyan')
-                print_colored(f"🌐 Visit: http://192.168.4.1", color='cyan')
+                                # Try to get actual IP from running app instance
+                try:
+                    ip_line = f"import {module_name}; print({module_name}.app.get_ip())"
+                    result = subprocess.run(['mpremote', 'connect', port, 'exec', ip_line],
+                                            capture_output=True, text=True, timeout=5)
+                    ip = result.stdout.strip().splitlines()[-1] if result.returncode == 0 else "192.168.4.1"
+                except:
+                    ip = "192.168.4.1"
+
+                print_colored(f"🌐 Visit: http://{ip} or http://192.168.8.102/, if you want app print logs use` mpremote connect COM10 run app.py  ` ", color='cyan')
+
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
                 if result.returncode != 0:
                     print_colored(f"❌ Error running {file}: return code {result.returncode}", color='red')

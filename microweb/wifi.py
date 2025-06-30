@@ -30,6 +30,29 @@ def setup_ap(ssid="ESP32-MicroWeb", password="12345678"):
     
     return ap.ifconfig()[0]
 
+
+def connect_wifi(ssid, password):
+    import network, time
+    print(f"Connecting to WiFi SSID: {ssid}")
+    sta = network.WLAN(network.STA_IF)
+    sta.active(True)
+    sta.connect(ssid, password)
+
+    timeout = 10
+    start = time.time()
+    while not sta.isconnected() and (time.time() - start) < timeout:
+        print("Trying to connect...")
+        time.sleep(1)
+
+    if sta.isconnected():
+        ip = sta.ifconfig()[0]
+        print("Connected. IP:", ip)
+        return ip
+    else:
+        raise OSError("WiFi Internal Error")
+
+
+
 def get_ip():
     """Get the AP IP address."""
     ap = network.WLAN(network.AP_IF)
@@ -47,4 +70,22 @@ def stop_ap():
         print("=" * 40)
     else:
         print("Access Point is already stopped.")
-        
+
+
+def disconnect_wifi():
+    """Disconnect from external WiFi and disable STA interface."""
+    sta = network.WLAN(network.STA_IF)
+    if sta.active():
+        sta.disconnect()
+        sta.active(False)
+        print("=" * 40)
+        print("Disconnected from WiFi and disabled STA mode.")
+        print("=" * 40)
+    else:
+        print("STA (WiFi client) is already inactive.")
+
+
+def is_connected():
+    """Check if the ESP32 is connected to a WiFi network."""
+    sta = network.WLAN(network.STA_IF)
+    return sta.isconnected() if sta.active() else False

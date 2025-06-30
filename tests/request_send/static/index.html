@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 MicroWeb</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>{% greeting %}</h1>
+    {{ if projects }}
+    <ul>
+        {{ for project in projects }}
+        <li>
+            <strong>{{ project.title }}</strong>: {{ project.description }}
+        </li>
+        {{ endfor }}
+    </ul>
+    {{ else }}
+    <p>No projects found.</p>
+    {{ endif }}
+    <script src="/script.js"></script>
+</body>
+</html>
