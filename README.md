@@ -15,6 +15,15 @@ app = MicroWeb(ap={'ssid': 'MyWiFi', 'password': 'MyPassword'}, debug=True)
 def index(req):
     return {"message": "Welcome to MicroWeb API!"}
 
+@app.route('/status')
+def status(req):
+    return {"status": "running", "message": "Server is up and running!"}
+
+@app.route('/greet/<name>')
+def greet(req, match):
+    name = match.group(1) if match else "Anonymous"
+    return {"message": f"Hello, {name}!", "status": "success"}
+
 app.run()
 ```
 
@@ -25,32 +34,87 @@ For reference, here's how a basic web server looks using only MicroPython's buil
 ```python
 import network
 import socket
+import ure  # micro regex
 
+# Setup Wi-Fi Access Point
 ap = network.WLAN(network.AP_IF)
 ap.active(True)
 ap.config(essid='ESP32-AP', password='12345678')
+print("Access Point created with IP:", ap.ifconfig()[0])
 
+# Start socket server
 addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 s = socket.socket()
-s.bind(addr)
-s.listen(1)
+.......................
+        .......................
+       
 
-print('listening on', addr)
+print('Listening on', addr)
 
+# Define route logic
+def handle_request(path):
+    if path == "/":
+        return {"message": "Welcome to MicroWeb API!"}
+
+    elif path == "/status":
+        return {"status": "running", "message": "Server is up and running!"}
+
+    elif path.startswith("/greet/"):
+        match = ure.match(r"/greet/(.+)", path)
+        .......................
+        .......................
+       
+
+    elif path == "/greet":
+        return {"message": "Hello, Anonymous!", "status": "success"}
+
+    else:
+        return {"error": "Not found", "status": 404}
+
+# Simple JSON response builder
+def json_response(data, status_code=200):
+   .......................
+        .......................
+        ......................
+    response += ujson.dumps(data)
+    return response
+
+# Main loop
 while True:
-    cl, addr = s.accept()
-    print('client connected from', addr)
-    request = cl.recv(1024)
-    response = """\
-HTTP/1.1 200 OK
+    try:
+        cl, addr = s.accept()
+        print('Client connected from', addr)
+        .......................
+        .......................
+        ......................
+        cl.send(response)
+    except Exception as e:
+        print("Error:", e)
+    finally:
+        cl.close()
 
-Hello from ESP32 MicroPython!
-"""
-    cl.send(response)
-    cl.close()
 ```
 
 With MicroWeb, you get routing, templates, JSON, static files, and more—making web development on ESP32 much easier compared to the raw socket approach above.
+
+
+
+## 📊 Code Size Comparison (Line Count)
+
+| Component                 | Raw MicroPython Server   | MicroWeb Server                 |
+| ------------------------- | ------------------------ | ------------------------------- |
+| 📡 Wi-Fi Setup            | 5 lines                  | 1 line                          |
+| 🔌 Socket Setup           | 5 lines                  | 0 lines (abstracted)            |
+| 🔁 Server Loop            | 15+ lines                | 0 lines (abstracted)            |
+| 📍 Route Definitions      | 20+ lines (manual logic) | 10 lines (with decorators)      |
+| 🧠 Path Parsing / Routing | 5+ lines (manual regex)  | 0 lines (handled by MicroWeb)   |
+| 🧾 JSON Response Builder  | 5 lines                  | 0 lines (handled automatically) |
+| 🔍 Logging / Debug Info   | 5 lines (print-based)    | 0 lines (with `debug=True`)     |
+| 🧱 Total Lines            | \~55–60 lines            | \~15 lines                      |
+
+---
+
+
 
 ---
 ## Table of Contents
@@ -65,8 +129,8 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
     - [Minimal Example (`tests/2/app.py`)](#minimal-example-tests2apppy)
     - [Static Files and Templates Example (`tests/1/app.py`)](#static-files-and-templates-example-tests1apppy)
     - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
-    - [For Loop Example](#for-loop-example-testsfor_loops)
-    - [External API and Template Example](#external-api-and-template-example-testsrequest_send)
+    - [For Loop Example (`tests/for_loop`)](#for-loop-example-testsfor_loops)
+    - [External API and Template Example (`tests/request_send`)](#external-api-and-template-example-testsrequest_send)
 - [Wi-Fi Configuration](#wi-fi-configuration)
 - [Accessing the Web Server](#accessing-the-web-server)
 - [CLI Tool Usage Examples](#cli-tool-usage-examples)
@@ -110,7 +174,7 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install .
 ```
 
-> **Note:** The workspace does not contain a git repository. If you want to contribute or track changes, initialize one with `git init`.
+
 
 
 ---
@@ -246,6 +310,34 @@ def headers_example(request):
 app.run()
 ```
 
+
+**Example Template (`tests/for_loops/static/index.html`)**:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projects</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Projects</h1>
+    {% greeting %}
+    {{ if projects }}
+        <ul>
+        {{ for project in projects }}
+            <li>
+                <h2>{{ project.title }}</h2>
+                <p>{{ project.description }}</p>
+            </li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No projects found</p>
+    {{ endif }}
+</body>
+</html>
+```
 ---
 
 ### Static Files and Templates Example (`tests/1/app.py`)
@@ -357,65 +449,6 @@ app.add_static('/style.css', 'style.css')
 app.run()
 ```
 
-**Example Template (`tests/for_loops/static/index.html`)**:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Projects</title>
-    <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-    <h1>Projects</h1>
-    {% greeting %}
-    {{ if projects }}
-        <ul>
-        {{ for project in projects }}
-            <li>
-                <h2>{{ project.title }}</h2>
-                <p>{{ project.description }}</p>
-            </li>
-        {{ endfor }}
-        </ul>
-    {{ else }}
-        <p>No projects found</p>
-    {{ endif }}
-</body>
-</html>
-```
-
-**Example Static File (`tests/for_loops/static/style.css`)**:
-
-```css
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f0f0f0;
-}
-h1 {
-    color: #333;
-}
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-li {
-    background: #fff;
-    margin: 10px 0;
-    padding: 15px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-h2 {
-    margin: 0 0 10px;
-    color: #007BFF;
-}
-p {
-    margin: 0;
-    color: #555;
-}
-```
 
 **Explanation**:
 - **Application Code (`app.py`)**:
@@ -435,13 +468,6 @@ p {
   - Access `http://192.168.4.1/` to see the project list Zornlist with descriptions.
   - Access `http://192.168.4.1/empty` to see the "No projects found" message.
   - Use `curl http://192.168.4.1/` or a browser to verify the output.
-- **Output**:
-  - For `/`: Displays a styled list of projects with titles and descriptions.
-  - For `/empty`: Displays "No projects found" with the greeting.
-- **Best Practices**:
-  - Ensure `index.html` and `style.css` are in the `static/` directory.
-  - Test both routes to verify conditional rendering.
-  - Use `debug=True` to log any template or file-serving errors.
 
 
 ---
@@ -529,7 +555,7 @@ app.add_static('/script.js', 'script.js')
 app.run()
 ```
 
-**Template (`tests/request_send/index.html`)**:
+**Template (`tests/request_send/static/index.html`)**:
 
 ```html
 <!DOCTYPE html>
@@ -554,7 +580,7 @@ app.run()
 </html>
 ```
 
-**Static CSS (`tests/request_send/style.css`)**:
+**Static CSS (`tests/request_send/static/style.css`)**:
 
 ```css
 body {
@@ -565,19 +591,10 @@ body {
 h1 {
     color: #007BFF;
 }
-ul {
-    padding: 0;
-    list-style: none;
-}
-li {
-    background: white;
-    margin: 10px 0;
-    padding: 10px;
-    border-left: 5px solid #007BFF;
-}
+.....
 ```
 
-**Static JavaScript (`tests/request_send/script.js`)**:
+**Static JavaScript (`tests/request_send/static/script.js`)**:
 
 ```javascript
 document.addEventListener("DOMContentLoaded", function () {
