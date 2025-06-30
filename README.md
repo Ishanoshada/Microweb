@@ -114,7 +114,9 @@ With MicroWeb, you get routing, templates, JSON, static files, and more—making
 
 ---
 
+## Give us a ⭐️ if you find this project helpful!  
 
+If you like this project, please consider giving it a star ⭐️ on GitHub. Your support motivates me to keep improving it!  
 
 ---
 ## Table of Contents
