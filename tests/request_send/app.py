@@ -11,7 +11,7 @@ import urequests
 
 
 app = MicroWeb(
-    ap={"ssid": "Dialog 4G 0F8", "password": "8B5NRfLE"},  # Change to your router
+    ap={"ssid": "Dialog 4G 0F8", "password": "youpassword"},  # Change to your router
     debug=True,
     mode="wifi"  # Connect as client to your router
 )

@@ -89,3 +89,31 @@ def is_connected():
     """Check if the ESP32 is connected to a WiFi network."""
     sta = network.WLAN(network.STA_IF)
     return sta.isconnected() if sta.active() else False
+
+
+def scan_wifi_networks():
+    """Scan for available WiFi networks"""
+    sta = network.WLAN(network.STA_IF)
+    sta.active(True)
+    networks = sta.scan()
+    results = []
+    
+    for net in networks:
+        ssid = net[0].decode('utf-8')
+        bssid = ':'.join(['%02x' % b for b in net[1]])
+        channel = net[2]
+        rssi = net[3]
+        auth = net[4]
+        hidden = net[5]
+        
+        results.append({
+            'ssid': ssid,
+            'bssid': bssid,
+            'channel': channel,
+            'rssi': rssi,
+            'auth': auth,
+            'hidden': hidden
+        })
+    
+    return sorted(results, key=lambda x: x['rssi'], reverse=True)
+
