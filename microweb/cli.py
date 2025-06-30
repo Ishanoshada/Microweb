@@ -466,10 +466,20 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     if ap_match:
                         ssid = ap_match.group(1)
                         password = ap_match.group(2)
+                    else:
+                        ap_match = re.search(
+    r'MicroWeb\s*\([^)]*ap\s*=\s*{\s*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
+    content, re.DOTALL
+)
+                        if ap_match:
+                            ssid = ap_match.group(1)
+                            password = ap_match.group(2)
                 except Exception:
                     pass
                 if ssid and password:
                     print_colored(f"📶 Connect to SSID: {ssid}, Password: {password}", color='cyan')
+                else:
+                    print_colored(" ⚠️ No Wi-Fi access point configured in app.py. Using default IP.", color='yellow')
                                 # Try to get actual IP from running app instance
                 try:
                     ip_line = f"import {module_name}; print({module_name}.app.get_ip())"
