@@ -535,11 +535,13 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 except:
                     ip = "192.168.4.1"
                 print_colored(f"🌐 Visit: http://{ip} or http://192.168.8.102/, if you want app print logs use `mpremote connect {port} run {file}`", color='cyan')
+                print_colored(" If you want remove this app, run 'microweb remove --port {port} --remove'", color='cyan')
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
                 if result.returncode != 0:
                     print_colored(f"❌ Error running {file}: return code {result.returncode}", color='red')
                     print_colored(f"stdout:\n{result.stdout.strip()}\nstderr:\n{result.stderr.strip()}", color='red')
                     print_colored(f"Try: microweb flash --port {port}", color='cyan')
+                    print_colored(" If you want remove this app, run 'microweb remove --port {port} --remove'", color='cyan')
                     return
                 if upload_count > 0:
                     print_colored(f"📊 Uploaded {upload_count} file(s), skipped {len(files_skipped)} file(s)", color='green')
@@ -551,7 +553,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 print_colored(f"❌ Unexpected error running {file}: {e}", color='red')
         else:
             print_colored(f"⚠️ boot.py uploaded, app will run automatically on boot. Not running app.run() now.", color='yellow')
-        print_colored(" If you want remove this app.py, run 'microweb remove --port {port} --remove'", color='cyan')
+        
         
     except Exception as e:
         print_colored(f"❌ Error: {e}", color='red')

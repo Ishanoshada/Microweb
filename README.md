@@ -128,6 +128,7 @@ If you like this project, please consider giving it a star ⭐️ on GitHub. You
     - [Flashing the ESP32](#flashing-the-esp32)
     - [Running a Custom Application](#running-a-custom-application)
 - [Example Usage](#example-usage)
+    - [Example Projects](#example-projects)
     - [Minimal Example (`tests/2/app.py`)](#minimal-example-tests2apppy)
     - [Static Files and Templates Example (`tests/1/app.py`)](#static-files-and-templates-example-tests1apppy)
     - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
@@ -268,6 +269,28 @@ You can configure your ESP32 to automatically start your application after any p
   This prints logs like `Connecting to WiFi SSID: Dialog 4G 0F8`, `Connected. IP: 192.168.8.102`.
 
 ## Example Usage
+
+Ah, got it! You want to **mention the `Microweb-Examples` repository in the `README.md` of your main [`Microweb`](https://github.com/Ishanoshada/Microweb) repository**.
+
+Here’s what you can add to the bottom (or a "See Also" section) of your `Microweb/README.md`:
+
+---
+
+###  Example Projects
+
+Looking for real-world examples using MicroWeb on ESP32?
+
+👉 Check out the companion repository:
+**[MicroWeb-Examples](https://github.com/Ishanoshada/Microweb-Examples)** – A collection of MicroPython-based IoT projects using the MicroWeb framework, featuring:
+
+* 🔦 Laser Diode Control
+* 📡 Microwave Radar Motion Detection
+* 📏 Ultrasonic Distance Measuring
+
+Explore how MicroWeb is used in practical applications with minimal setup!
+
+---
+
 
 ### Minimal Example (`tests/2/app.py`)
 

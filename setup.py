@@ -4,7 +4,7 @@ setup(
     # The name of the package as it will appear on PyPI
     name="microweb",
     # Updated version to reflect new features (template engine with for loops, etc.)
-    version="0.1.9",
+    version="0.2.0",
     # Automatically find all packages and subpackages
     packages=find_packages(),
     # Include non-code files specified in MANIFEST.in or package_data
@@ -26,7 +26,7 @@ setup(
     # Short description of the package, updated to highlight template engine
     description="A lightweight web server framework for MicroPython on ESP32, supporting dynamic routing, template rendering with for loops and conditionals, and static file serving.",
     # Long description from README file
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     # Format of the long description
     long_description_content_type="text/markdown",
     # URL to the project homepage
