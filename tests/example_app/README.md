@@ -7,6 +7,8 @@ This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It 
 - `static/index.html`: A template displaying a list of projects using a for loop and conditional rendering.
 - `static/style.css`: CSS styles for the project list.
 - `static/script.js`: Basic JavaScript for interactivity.
+- `models/users.py`: A model for user data (not used in this example, but can be extended).
+- `models/products.py`: A model for product data (not used in this example, but can be extended).
 - `README.md`: This file.
 
 

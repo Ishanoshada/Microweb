@@ -292,6 +292,7 @@ def flash(port, erase, esp8266, firmware):
         print_colored(f"Error during flash: {e}", color='red')
 
 
+
 @cli.command()
 @click.argument('file')
 @click.option('--port', default=None, help='Serial port, e.g., COM10')
@@ -314,7 +315,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
     if add_boot and remove_boot:
         print_colored("Error: --add-boot and --remove-boot options cannot be used together.", color='red')
         return
-    print_colored(f"Analyzing {file} for static file and template dependencies...", color='blue')
+    print_colored(f"Analyzing {file} for static file, template, and library/model dependencies...", color='blue')
     static_files, template_files = analyze_app_static_files(file)
     # --- Find templates in ./ and ./static ---
     found_templates = set()
@@ -323,7 +324,6 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
             for entry in os.listdir(folder):
                 if entry.endswith('.html') or entry.endswith('.htm'):
                     found_templates.add(os.path.join(folder, entry))
-    # Add found templates if not already in template_files
     for tfile in found_templates:
         if tfile not in template_files:
             template_files.add(tfile)
@@ -360,8 +360,33 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
             print_colored(f"  ✓ {url_path} -> {file_full_path} ({file_size} bytes)", color='green')
     else:
         print_colored("No static files found in app.", color='yellow')
+    # --- Analyze library and model files ---
+    lib_files = set()
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        lib_pattern = r'app\.lib_add\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)'
+        lib_matches = re.findall(lib_pattern, content)
+        for lib_file in lib_matches:
+            if lib_file not in ['lib', 'example', 'placeholder']:
+                lib_path = os.path.join(os.path.dirname(file), lib_file)
+                lib_files.add(lib_path)
+        if lib_files:
+            print_colored(f"Found {len(lib_files)} library/model file references:", color='blue')
+            for lib_file in lib_files:
+                print_colored(f"  {lib_file} {'(exists)' if os.path.exists(lib_file) else '(missing)'}", color='cyan')
+            missing_libs = [lib for lib in lib_files if not os.path.exists(lib)]
+            if missing_libs:
+                print_colored(f"\nError: Missing {len(missing_libs)} library/model files:", color='red')
+                for lib in missing_libs:
+                    print_colored(f"  {lib} (NOT FOUND)", color='red')
+                print_colored("\nPlease create these library/model files or update your app.py file.", color='yellow')
+                return
+    except Exception as e:
+        print_colored(f"Error analyzing library/model files in {file}: {e}", color='red')
+        return
     if check_only:
-        print_colored("\nStatic file and template check complete.", color='green')
+        print_colored("\nStatic file, template, and library/model check complete.", color='green')
         return
     if not port:
         ports = [p.device for p in serial.tools.list_ports.comports()]
@@ -375,7 +400,6 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
     if not check_micropython(port):
         print_colored(f"MicroPython not detected on ESP32. Please run 'microweb flash --port {port}' first.", color='red')
         return
-    
     try:
         print_colored(f"\nGetting remote file information from {port}...", color='blue')
         remote_files = get_remote_file_info(port)
@@ -400,7 +424,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 else:
                     files_skipped.append((remote_name, reason))
             else:
-                print_colored(f"Warning: Template file {template_file} not found locally, skipping upload or maybe can find", color='yellow')
+                print_colored(f"farning Fajling: Template file {template_file} not found locally, skipping upload.", color='yellow')
         static_uploads = []
         if existing_files:
             for url_path, file_full_path in existing_files:
@@ -410,7 +434,19 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     static_uploads.append((file_full_path, filename, reason))
                 else:
                     files_skipped.append((f"static/{filename}", reason))
-        total_uploads = len(files_to_upload) + len(template_uploads) + len(static_uploads)
+        lib_uploads = []
+        if lib_files:
+            for lib_file in lib_files:
+                if os.path.exists(lib_file):
+                    filename = os.path.basename(lib_file)
+                    relative_path = os.path.relpath(lib_file, os.path.dirname(file)).replace('\\', '/')
+                    remote_name = relative_path if relative_path.startswith(('lib/', 'models/')) else f"lib/{filename}"
+                    should_upload, reason = should_upload_file(lib_file, remote_name, remote_files)
+                    if force or should_upload:
+                        lib_uploads.append((lib_file, filename, relative_path, reason))
+                    else:
+                        files_skipped.append((remote_name, reason))
+        total_uploads = len(files_to_upload) + len(template_uploads) + len(static_uploads) + len(lib_uploads)
         if files_skipped:
             print_colored(f"\n📋 Files skipped ({len(files_skipped)}):", color='yellow')
             for filename, reason in files_skipped:
@@ -427,6 +463,8 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 print_colored(f"  📄 {remote_name}: {reason}", color='cyan')
             for local_path, filename, reason in static_uploads:
                 print_colored(f"  🎨 static/{filename}: {reason}", color='cyan')
+            for lib_file, filename, relative_path, reason in lib_uploads:
+                print_colored(f"  📚 {relative_path}: {reason}", color='cyan')
         upload_count = 0
         for file_type, local_path, remote_name, reason in files_to_upload:
             print_colored(f"\n⬆️  Uploading {remote_name}...", color='cyan')
@@ -442,6 +480,15 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
             for file_full_path, filename, reason in static_uploads:
                 print_colored(f"⬆️  Uploading static file: static/{filename}...", color='cyan')
                 upload_file(file_full_path, port, destination=f"static/{filename}")
+                upload_count += 1
+        if lib_uploads:
+            lib_dirs = set(os.path.dirname(relative_path) for _, _, relative_path, _ in lib_uploads)
+            for dir_name in lib_dirs:
+                print_colored(f"📁 Creating {dir_name} directory on ESP32...", color='blue')
+                create_directory(dir_name, port)
+            for lib_file, filename, relative_path, reason in lib_uploads:
+                print_colored(f"⬆️  Uploading library/model file: {relative_path}...", color='cyan')
+                upload_file(lib_file, port, destination=relative_path)
                 upload_count += 1
         if add_boot:
             upload_boot_py(port, module_name)
@@ -460,7 +507,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     with open(file, 'r', encoding='utf-8') as f:
                         content = f.read()
                     ap_match = re.search(
-                        r'MicroWeb\s*\(\s*.*ap\s*=\s*{[^}]*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
+                        r'MicroWeb\s*\(\s*.*ocier*ap\s*=\s*{[^}]*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
                         content
                     )
                     if ap_match:
@@ -468,9 +515,9 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                         password = ap_match.group(2)
                     else:
                         ap_match = re.search(
-    r'MicroWeb\s*\([^)]*ap\s*=\s*{\s*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
-    content, re.DOTALL
-)
+                            r'MicroWeb\s*\([^)]*ap\s*=\s*{\s*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
+                            content, re.DOTALL
+                        )
                         if ap_match:
                             ssid = ap_match.group(1)
                             password = ap_match.group(2)
@@ -480,7 +527,6 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     print_colored(f"📶 Connect to SSID: {ssid}, Password: {password}", color='cyan')
                 else:
                     print_colored(" ⚠️ No Wi-Fi access point configured in app.py. Using default IP.", color='yellow')
-                                # Try to get actual IP from running app instance
                 try:
                     ip_line = f"import {module_name}; print({module_name}.app.get_ip())"
                     result = subprocess.run(['mpremote', 'connect', port, 'exec', ip_line],
@@ -488,14 +534,12 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     ip = result.stdout.strip().splitlines()[-1] if result.returncode == 0 else "192.168.4.1"
                 except:
                     ip = "192.168.4.1"
-
-                print_colored(f"🌐 Visit: http://{ip} or http://192.168.8.102/, if you want app print logs use` mpremote connect COM10 run app.py  ` ", color='cyan')
-
+                print_colored(f"🌐 Visit: http://{ip} or http://192.168.8.102/, if you want app print logs use `mpremote connect {port} run {file}`", color='cyan')
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
                 if result.returncode != 0:
                     print_colored(f"❌ Error running {file}: return code {result.returncode}", color='red')
                     print_colored(f"stdout:\n{result.stdout.strip()}\nstderr:\n{result.stderr.strip()}", color='red')
-                    print_colored(f"try microweb flash --port COM10 ",color="cyan")
+                    print_colored(f"Try: microweb flash --port {port}", color='cyan')
                     return
                 if upload_count > 0:
                     print_colored(f"📊 Uploaded {upload_count} file(s), skipped {len(files_skipped)} file(s)", color='green')
@@ -507,8 +551,12 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 print_colored(f"❌ Unexpected error running {file}: {e}", color='red')
         else:
             print_colored(f"⚠️ boot.py uploaded, app will run automatically on boot. Not running app.run() now.", color='yellow')
+        print_colored(" If you want remove this app.py, run 'microweb remove --port {port} --remove'", color='cyan')
+        
     except Exception as e:
         print_colored(f"❌ Error: {e}", color='red')
+
+
 
 
 
@@ -558,9 +606,14 @@ def create(path):
     try:
         os.makedirs(path, exist_ok=True)
         os.makedirs(os.path.join(path, 'static'), exist_ok=True)
-        
+        os.makedirs(os.path.join(path, 'models'), exist_ok=True)
+
         app_content = """import wifi
 from microweb import MicroWeb
+
+#import some_lib 
+#import users
+#import products
 
 # Initialize MicroWeb application with debug mode and Wi-Fi access point configuration
 app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
@@ -571,6 +624,19 @@ app = MicroWeb(debug=True, ap={"ssid": "MyESP32", "password": "mypassword"})
 #     mode="wifi"  # Connect as client to your router
 # )
 
+# Register library and model files
+# app...lib_add("some_lib.py")
+# app...lib_add("models/users.py")
+# app...lib_add("models/products.py")
+
+
+#############################################################
+
+# this is example app.py file for MicroWeb
+# It demonstrates dynamic routing, template rendering with for loops,
+# if you want fresh start remove this all
+
+#############################################################
 
 @app.route('/')
 def home(req):
@@ -623,6 +689,27 @@ def greet(req, match):
 #                                  method="POST")
 #     else:
 #         return app.render_template('form.html')
+
+
+# @app.route('/add_user', methods=['POST'])
+# def add_user(req):
+#     name = req.form.get('name', '')
+#     email = req.form.get('email', '')
+#     if name and email:
+#         new_user = users.add_user(name, email)
+#         return app.json_response({"message": "User added", "user": new_user})
+#     return app.json_response({"error": "Invalid input"}, status=400)
+
+# @app.route('/add_product', methods=['POST'])
+# def add_product(req):
+#     name = req.form.get('name', '')
+#     price = float(req.form.get('price', 0)) if req.form.get('price', '').replace('.', '', 1).isdigit() else 0
+#     if name and price > 0:
+#         new_product = products.add_product(name, price)
+#         return app.json_response({"message": "Product added", "product": new_product})
+#     return app.json_response({"error": "Invalid input"}, status=400)
+
+
 
 # Register static files
 app.add_static('/style.css', 'style.css')
@@ -709,6 +796,8 @@ This is a simple MicroWeb application for MicroPython devices (e.g., ESP32). It 
 - `static/index.html`: A template displaying a list of projects using a for loop and conditional rendering.
 - `static/style.css`: CSS styles for the project list.
 - `static/script.js`: Basic JavaScript for interactivity.
+- `models/users.py`: A model for user data (not used in this example, but can be extended).
+- `models/products.py`: A model for product data (not used in this example, but can be extended).
 - `README.md`: This file.
 
 
@@ -766,11 +855,64 @@ microweb examples
 ```
 """
 
+        models_users_content = """# models/products.py
+class Product:
+    def __init__(self):
+        self.products = [
+            {"id": 1, "name": "Laptop", "price": 999.99},
+            {"id": 2, "name": "Phone", "price": 499.99}
+        ]
+    
+    def get_all(self):
+        return self.products
+    
+    def get_by_id(self, product_id):
+        for product in self.products:
+            if product["id"] == product_id:
+                return product
+        return None
+    
+    def add_product(self, name, price):
+        new_id = max([product["id"] for product in self.products], default=0) + 1
+        new_product = {"id": new_id, "name": name, "price": price}
+        self.products.append(new_product)
+        return new_product
+
+
+        """
+
+        models_products_content = """# models/products.py
+class Product:
+    def __init__(self):
+        self.products = [
+            {"id": 1, "name": "Laptop", "price": 999.99},
+            {"id": 2, "name": "Phone", "price": 499.99}
+        ]
+    
+    def get_all(self):
+        return self.products
+    
+    def get_by_id(self, product_id):
+        for product in self.products:
+            if product["id"] == product_id:
+                return product
+        return None
+    
+    def add_product(self, name, price):
+        new_id = max([product["id"] for product in self.products], default=0) + 1
+        new_product = {"id": new_id, "name": name, "price": price}
+        self.products.append(new_product)
+        return new_product
+
+        """
+
         app_path = os.path.join(path, 'app.py')
         index_path = os.path.join(path, 'static', 'index.html')
         style_path = os.path.join(path, 'static', 'style.css')
         script_path = os.path.join(path, 'static', 'script.js')
         readme_path = os.path.join(path, 'README.md')
+        model_users = os.path.join(path,'models', 'users.py')
+        models_products = os.path.join(path, 'models', 'products.py')
         
         with open(app_path, 'w', encoding='utf-8') as f:
             f.write(app_content)
@@ -782,6 +924,10 @@ microweb examples
             f.write(script_content)
         with open(readme_path, 'w', encoding='utf-8') as f:
             f.write(readme_content)
+        with open(model_users, 'w', encoding='utf-8') as f:
+            f.write(models_users_content)
+        with open(models_products, 'w', encoding='utf-8') as f:
+            f.write(models_products_content)
         
         print_colored(f"Example app created at {path}/", color='green')
         print_colored(f"  - {app_path}", color='cyan')
@@ -789,7 +935,10 @@ microweb examples
         print_colored(f"  - {style_path}", color='cyan')
         print_colored(f"  - {script_path}", color='cyan')
         print_colored(f"  - {readme_path}", color='cyan')
+        print_colored(f"  - {model_users}", color='cyan')
+        print_colored(f"  - {models_products}", color='cyan')
         print_colored(f"Run with: microweb run {app_path} --port COM10 --static static/", color='yellow')
+        
     except Exception as e:
         print_colored(f"Error creating example app: {e}", color='red')
 

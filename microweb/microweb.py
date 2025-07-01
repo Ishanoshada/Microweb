@@ -204,6 +204,7 @@ class MicroWeb:
     def __init__(self, ssid=None, password=None, port=80, debug=False, ap=None, mode="ap"):
         self.routes = {}
         self.static_files = {}
+        self.lib_files = []  # Added to store library files
         self.config = {'port': port, 'debug': debug}
         self.session = {}
         self._template_cache = {}
@@ -278,6 +279,12 @@ class MicroWeb:
     
     def get_ip(self):
         return self.config.get('ip', '0.0.0.0')
+
+    def lib_add(self, file_path):
+        """Register a library file to be uploaded to the ESP32."""
+        self.lib_files.append(file_path)
+        if self.config['debug']:
+            print(f"Registered library file: {file_path}")
 
     def json_response(self, data, status=200):
         return Response(ujson.dumps(data), status=200, content_type='application/json')

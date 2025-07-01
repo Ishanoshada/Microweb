@@ -133,6 +133,7 @@ If you like this project, please consider giving it a star ⭐️ on GitHub. You
     - [Portfolio Demo (`tests/portfolio/`)](#portfolio-demo-testsportfolio)
     - [For Loop Example (`tests/for_loop`)](#for-loop-example-testsfor_loops)
     - [External API and Template Example (`tests/request_send`)](#external-api-and-template-example-testsrequest_send)
+    - [Library and Model Upload Example (`tests/upload_lib/`)](#library-and-model-upload-example-testsupload_lib)
 - [Wi-Fi Configuration](#wi-fi-configuration)
 - [Accessing the Web Server](#accessing-the-web-server)
 - [CLI Tool Usage Examples](#cli-tool-usage-examples)
@@ -685,25 +686,202 @@ document.addEventListener("DOMContentLoaded", function () {
 
 ---
 
-### How to Apply
-- **Add to `README.md`**:
-  - Append the **External API and Template Example** subsection above to the **Example Usage** section, after the **HTTP Request Example**.
-  - Keep the **Wi-Fi Configuration** and other subsections unchanged.
-- **Set Up Files**:
-  - Create the `tests/request_send/` folder.
-  - Save `app.py` in `tests/request_send/`.
-  - Create `tests/request_send/static/` and save `index.html`, `style.css`, and `script.js` there.
-  - Optionally, add `mirror.html` to `static/` for the `/offline` route (e.g., a simple HTML file with placeholder content).
-- **Run and Test**:
-  - Upload and run:
-    ```bash
-    microweb run tests/request_send/app.py --port COM10 --static tests/request_send/static/
+
+### Library and Model Upload Example (`tests/upload_lib/`)
+
+This example, located in the `tests/upload_lib/` folder, demonstrates how to use MicroWeb’s `lib_add` method to include external libraries and model files, and how to handle both GET and POST requests with a dynamic template. It includes models for managing users and products, a utility library, and a form-based interface for adding data.
+
+**Application Code (`tests/upload_lib/app.py`)**:
+
+```python
+from microweb import MicroWeb
+import some_lib
+from users import User
+from products import Product
+
+# Initialize MicroWeb with debug mode and Wi-Fi access point
+app = MicroWeb(debug=True, ap={"ssid": "TestESP32", "password": "test1234"})
+
+# Register library and model files
+app.lib_add("some_lib.py")
+app.lib_add("/models/users.py")
+app.lib_add("/models/products.py")
+
+# Initialize models
+users = User()
+products = Product()
+
+@app.route('/')
+def home(req):
+    return app.render_template(
+        'index.html',
+        greeting=some_lib.say_hello(),
+        timestamp=some_lib.get_timestamp(),
+        users=users.get_all(),
+        products=products.get_all()
+    )
+
+@app.route('/user/<id>')
+def get_user(req, match):
+    user_id = int(match.group(1)) if match else 0
+    user = users.get_by_id(user_id)
+    if user:
+        .................................
+        ....................
+app.run()
+```
+
+**Library File (`tests/upload_lib/some_lib.py`)**:
+
+```python
+def say_hello():
+    return "Hello from some_lib!"
+
+def get_timestamp():
+    import time
+    return time.time()
+```
+
+**Model File (`tests/upload_lib/models/users.py`)**:
+
+```python
+class User:
+    def __init__(self):
+        self.users = [
+            {"id": 1, "name": "Alice", "email": "alice@example.com"},
+            {"id": 2, "name": "Bob", "email": "bob@example.com"}
+        ]
+    
+    def get_all(self):
+        return self.users
+   ......................
+```
+
+**Model File (`tests/upload_lib/models/products.py`)**:
+
+```python
+class Product:
+    def __init__(self):
+        self.products = [
+            {"id": 1, "name": "Laptop", "price": 999.99},
+            {"id": 2, "name": "Phone", "price": 499.99}
+        ]
+    
+    def get_all(self):
+        return self.products
+  .............................
+  ...........................
+```
+
+**Template (`tests/upload_lib/static/index.html`)**:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test App</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>{{ greeting }}</h1>
+    <p>Timestamp: {{ timestamp }}</p>
+    
+    <h2>Add User</h2>
+   ................
+   ................
+   ..........
+    
+    <h2>Users</h2>
+    {{ if users }}
+        <ul>
+        {{ for user in users }}
+            <li>{{ user.name }} ({{ user.email }}) - ID: {{ user.id }}</li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No users found</p>
+    {{ endif }}
+    
+    <h2>Products</h2>
+    {{ if products }}
+        <ul>
+        {{ for product in products }}
+            <li>{{ product.name }} - ${{ product.price }} - ID: {{ product.id }}</li>
+        {{ endfor }}
+        </ul>
+    {{ else }}
+        <p>No products found</p>
+    {{ endif }}
+</body>
+</html>
+```
+
+**Static CSS (`tests/upload_lib/static/style.css`)**:
+
+```css
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    .............
+```
+
+**Explanation**:
+- **Application Code (`app.py`)**:
+  - Imports `User` and `Product` directly from `users` and `products` modules, reflecting their placement in the root directory (`tests/upload_lib/`).
+  - Uses `app.lib_add()` to register `some_lib.py`, `users.py`, and `products.py` for upload to the ESP32.
+  - The `/` route renders `index.html` with data from `some_lib` (greeting, timestamp) and the `User` and `Product` models.
+  - Routes `/user/<id>` and `/product/<id>` handle GET requests, returning JSON for specific users or products.
+  - Routes `/add_user` and `/add_product` handle POST requests from forms, adding new users or products and returning JSON responses.
+  - `app.add_static('/style.css', 'style.css')` serves the CSS file for styling.
+- **Library File (`some_lib.py`)**:
+  - Provides utility functions `say_hello()` and `get_timestamp()` used in the `home` route.
+  - Uploaded to `lib/some_lib.py` on the ESP32 for organized imports.
+- **Model Files (`users.py`, `products.py`)**:
+  - Define `User` and `Product` classes with in-memory data storage and methods for retrieving and adding data.
+  - Uploaded to the ESP32 root directory to match the direct imports (`from users import User`, `from products import Product`).
+- **Template (`index.html`)**:
+  - Displays the greeting and timestamp from `some_lib`.
+  - Includes forms for adding users (POST to `/add_user`) and products (POST to `/add_product`).
+  - Lists users and products using `for` loops and `if` conditionals, with a fallback message if lists are empty.
+  - Links to `style.css` for styling.
+- **Static File (`style.css`)**:
+  - Provides a clean, modern look with styled forms, lists, and buttons.
+- **Directory Structure**:
+  - Files are organized as:
     ```
-  - Access `http://192.168.8.102/` and other routes.
-  - Check logs with:
-    ```bash
-    mpremote connect COM10 run tests/request_send/app.py
+    tests/upload_lib/
+    ├── app.py
+    ├── some_lib.py
+    ├── /models/users.py
+    ├── /models/products.py
+    ├── static/
+    │   ├── index.html
+    │   ├── style.css
     ```
+
+**Running**:
+1. Place `app.py`, `some_lib.py`, `users.py`, `products.py`, and the `static/` folder with `index.html` and `style.css` in `tests/upload_lib/`.
+2. Flash MicroPython (if not already done):
+   ```bash
+   microweb flash --port COM10
+   ```
+3. Upload and run the application:
+   ```bash
+   microweb run tests/upload_lib/app.py --port COM10 --static tests/upload_lib/static/
+   ```
+4. Connect to the Wi-Fi access point:
+   - SSID: `TestESP32`
+   - Password: `test1234`
+   - Access the server at `http://192.168.4.1/`.
+5. View real-time logs:
+   ```bash
+   mpremote connect COM10 run tests/upload_lib/app.py
+   ```
+   Expected logs:
+   ```
+   MicroWeb running on http://0.0.0.0:80
+   ```
+
 
 ### Wi-Fi Configuration
 
