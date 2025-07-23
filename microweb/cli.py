@@ -7,6 +7,7 @@ import os
 import re
 import pkg_resources
 from microweb.uploader import upload_file, create_directory, verify_files
+from microweb.dotenv import load_dotenv, get_env
 
 # ANSI color codes for enhanced terminal output
 COLORS = {
@@ -227,19 +228,22 @@ def remove_boot_py(port):
 @click.group()
 def cli():
     pass
-
+    
 @cli.command()
 @click.option('--port', default=None, help='Serial port, e.g., COM10')
+@click.option('--baud', default=460800, help='Baud rate for flashing (default: 460800)')
 @click.option('--erase', is_flag=True, help='Erase all flash before writing firmware')
 @click.option('--esp8266', is_flag=True, help='Flash ESP8266 firmware instead of ESP32')
 @click.option('--firmware', type=click.Path(exists=True), help='Custom firmware .bin file to flash')
-def flash(port, erase, esp8266, firmware):
-    """Flash MicroPython and MicroWeb to the ESP32 or ESP8266."""
+@click.option('--full-flash', is_flag=True, help='Use full flash mode (offset 0) instead of 0x1000')
+def flash(port, baud, erase, esp8266, firmware, full_flash):
+    """Flash MicroPython and MicroWeb to the ESP32, ESP8266, or other ESP boards."""
+    port = port
     if not port:
         ports = [p.device for p in serial.tools.list_ports.comports()]
         port = ports[0] if ports else None
     if not port:
-        print_colored("No ESP device found. Specify --port, e.g., --port COM10.", color='red')
+        print_colored("No ESP device found. Specify --port or set PORT in .env file.", color='red')
         return
 
     chip_name = "ESP8266" if esp8266 else "ESP32"
@@ -257,7 +261,7 @@ def flash(port, erase, esp8266, firmware):
             print_colored("Erase cancelled.", color='yellow')
             return
         print_colored(f"Erasing all flash on {port} ({chip_name})...", color='yellow')
-        esptool.main(['--port', port, 'erase_flash'])
+        esptool.main(['--port', port, '--baud', str(baud), 'erase_flash'])
 
     try:
         print_colored(f"Checking for MicroPython on {port}...", color='blue')
@@ -267,17 +271,19 @@ def flash(port, erase, esp8266, firmware):
             if not os.path.exists(firmware_path):
                 print_colored(f"Error: Firmware file not found at {firmware_path}.", color='red')
                 return
-            print_colored(f"Flashing {chip_name} firmware on {port}...", color='blue')
-            esptool.main(['--port', port, 'write_flash', '-z', '0x1000', firmware_path])
+            flash_offset = '0x0' if full_flash else '0x1000'
+            print_colored(f"Flashing {chip_name} firmware at offset {flash_offset} on {port}...", color='blue')
+            esptool.main(['--port', port, '--baud', str(baud), 'write_flash', '-z', flash_offset, firmware_path])
 
         print_colored("Uploading core files...", color='blue')
         core_files = [
             ('firmware/boot.py', 'boot.py'),
             ('microweb.py', 'microweb.py'),
             ('wifi.py', 'wifi.py'),
+            ('dotenv.py', 'dotenv.py'),
         ]
         for src, dest in core_files:
-            src_path = pkg_resources.resource_filename('microweb', src)
+            src_path = pkg_resources.resource_filename('microweb', src) if src.startswith('firmware/') else os.path.join(os.path.dirname(__file__), src)
             print_colored(f"Uploading {dest} from {src_path}...", color='cyan')
             if not os.path.exists(src_path):
                 print_colored(f"Error: Source file {src_path} not found.", color='red')
@@ -297,7 +303,7 @@ def flash(port, erase, esp8266, firmware):
 @click.argument('file')
 @click.option('--port', default=None, help='Serial port, e.g., COM10')
 @click.option('--check-only', is_flag=True, help='Only check static files, don\'t upload')
-@click.option('--static', default='static', help='Local static files folder path')
+@click.option('--static', default=None, help='Local static files folder path')
 @click.option('--force', is_flag=True, help='Force upload all files regardless of changes')
 @click.option('--no-stop', is_flag=True, help='Do not reset ESP32 before running app')
 @click.option('--timeout', default=3600, show_default=True, help='Timeout seconds for running app')
@@ -305,6 +311,9 @@ def flash(port, erase, esp8266, firmware):
 @click.option('--remove-boot', is_flag=True, help='Remove boot.py from the ESP32')
 def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remove_boot):
     """Upload and execute a file on the ESP32 (only uploads changed files)."""
+    env_vars = load_dotenv()
+    port = port or get_env('PORT', default=None, env_vars=env_vars)
+    static = static or get_env('STATIC_DIR', default='static', env_vars=env_vars)
     if not file.endswith('.py'):
         print_colored("Error: File must have a .py extension.", color='red')
         return
@@ -382,6 +391,14 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                     print_colored(f"  {lib} (NOT FOUND)", color='red')
                 print_colored("\nPlease create these library/model files or update your app.py file.", color='yellow')
                 return
+        # Check for load_dotenv import to determine if .env file should be uploaded
+        dotenv_pattern = r'^\s*(?:import\s+dotenv|from\s+dotenv\s+import\s+.*)\s*$'
+        uses_dotenv = False
+        for line in content.split('\n'):
+            if re.match(dotenv_pattern, line, re.MULTILINE):
+                uses_dotenv = True
+                print_colored("Detected dotenv import in app.py, checking for .env file...", color='cyan')
+                break
     except Exception as e:
         print_colored(f"Error analyzing library/model files in {file}: {e}", color='red')
         return
@@ -392,7 +409,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
         ports = [p.device for p in serial.tools.list_ports.comports()]
         port = ports[0] if ports else None
     if not port:
-        print_colored("No ESP32 found. Specify --port, e.g., --port COM10.", color='red')
+        print_colored("No ESP32 found. Specify --port or set PORT in .env file.", color='red')
         return
     if remove_boot:
         remove_boot_py(port)
@@ -424,7 +441,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 else:
                     files_skipped.append((remote_name, reason))
             else:
-                print_colored(f"farning Fajling: Template file {template_file} not found locally, skipping upload.", color='yellow')
+                print_colored(f"Warning: Template file {template_file} not found locally, skipping upload.", color='yellow')
         static_uploads = []
         if existing_files:
             for url_path, file_full_path in existing_files:
@@ -446,6 +463,18 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                         lib_uploads.append((lib_file, filename, relative_path, reason))
                     else:
                         files_skipped.append((remote_name, reason))
+        env_upload = []
+        if uses_dotenv:
+            env_file = os.path.join(os.path.dirname(file), '.env')
+            if os.path.exists(env_file):
+                should_upload, reason = should_upload_file(env_file, '.env', remote_files)
+                if force or should_upload:
+                    env_upload.append((env_file, '.env', reason))
+                else:
+                    files_skipped.append(('.env', reason))
+            else:
+                print_colored("Warning: .env file not found in project directory, skipping upload.", color='yellow')
+
         total_uploads = len(files_to_upload) + len(template_uploads) + len(static_uploads) + len(lib_uploads)
         if files_skipped:
             print_colored(f"\n📋 Files skipped ({len(files_skipped)}):", color='yellow')
@@ -490,6 +519,10 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 print_colored(f"⬆️  Uploading library/model file: {relative_path}...", color='cyan')
                 upload_file(lib_file, port, destination=relative_path)
                 upload_count += 1
+        for env_file_path, remote_name, reason in env_upload:
+            print_colored(f"⬆️  Uploading environment file: {remote_name}...", color='cyan')
+            upload_file(env_file_path, port, destination=remote_name)
+            upload_count += 1
         if add_boot:
             upload_boot_py(port, module_name)
         if not no_stop:
@@ -501,32 +534,32 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
             cmd = ['mpremote', 'connect', port, 'exec', f'import {module_name}; {module_name}.app.run()']
             try:
                 print_colored(f"\n✅ {file} is running on ESP32", color='green')
-                ssid = None
-                password = None
+                ssid = get_env('SSID', default=None, env_vars=env_vars)
+                password = get_env('PASSWORD', default=None, env_vars=env_vars)
                 try:
                     with open(file, 'r', encoding='utf-8') as f:
                         content = f.read()
                     ap_match = re.search(
-                        r'MicroWeb\s*\(\s*.*ocier*ap\s*=\s*{[^}]*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
+                        r'MicroWeb\s*\(\s*.*ap\s*=\s*{[^}]*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
                         content
                     )
                     if ap_match:
-                        ssid = ap_match.group(1)
-                        password = ap_match.group(2)
+                        ssid = ssid or ap_match.group(1)
+                        password = password or ap_match.group(2)
                     else:
                         ap_match = re.search(
                             r'MicroWeb\s*\([^)]*ap\s*=\s*{\s*["\']ssid["\']\s*:\s*["\']([^"\']+)["\']\s*,\s*["\']password["\']\s*:\s*["\']([^"\']+)["\']',
                             content, re.DOTALL
                         )
                         if ap_match:
-                            ssid = ap_match.group(1)
-                            password = ap_match.group(2)
+                            ssid = ssid or ap_match.group(1)
+                            password = password or ap_match.group(2)
                 except Exception:
                     pass
                 if ssid and password:
                     print_colored(f"📶 Connect to SSID: {ssid}, Password: {password}", color='cyan')
                 else:
-                    print_colored(" ⚠️ No Wi-Fi access point configured in app.py. Using default IP.", color='yellow')
+                    print_colored(" ⚠️ No Wi-Fi access point configured in app.py or .env. Using default IP.", color='yellow')
                 try:
                     ip_line = f"import {module_name}; print({module_name}.app.get_ip())"
                     result = subprocess.run(['mpremote', 'connect', port, 'exec', ip_line],
@@ -553,13 +586,9 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
                 print_colored(f"❌ Unexpected error running {file}: {e}", color='red')
         else:
             print_colored(f"⚠️ boot.py uploaded, app will run automatically on boot. Not running app.run() now.", color='yellow')
-        
-        
+
     except Exception as e:
         print_colored(f"❌ Error: {e}", color='red')
-
-
-
 
 
 @cli.command()
@@ -567,7 +596,7 @@ def run(file, port, check_only, static, force, no_stop, timeout, add_boot, remov
 @click.option('--remove', 'remove_everything', is_flag=True, help='Actually remove all files in the ESP32 home directory')
 def remove(port, remove_everything):
     """Remove all files in the ESP32 home directory (requires --remove flag to actually delete files)."""
-    boot_files = ["boot.py","microweb.py","wifi.py"]
+    boot_files = ["boot.py","microweb.py","wifi.py","dotenv.py"]
     if not port:
         ports = [p.device for p in serial.tools.list_ports.comports()]
         port = ports[0] if ports else None

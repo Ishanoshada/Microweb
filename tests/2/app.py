@@ -13,11 +13,30 @@ microweb run app.py --port COM10
 
 """
 
+
+
 from microweb import MicroWeb, Response
+
+#from dotenv import load_dotenv , get_env
+
+# env_vars = load_dotenv()
+# ssid = get_env('SSID', 'MyESP32', env_vars)
+# password = get_env('PASSWORD', 'mypassword', env_vars)
+# db_uri = get_env('DB_URI', None, env_vars)
 
 app = MicroWeb(debug=True, ap={'ssid': 'MyWiFi', 'password': 'MyPassword'})
 
-@app.route("/") 
+# app = MicroWeb(
+#     ap={"ssid": "Dialog 4G 0F8", "password": "youpassword"},  # Change to your router
+#     debug=True,
+#     mode="wifi"  # Connect as client to your router
+# )
+
+# Uncomment to stop Wi-Fi access point
+# app.stop_wifi()  # Uncomment to stop Wi-Fi access point
+## app.start_wifi()  # Uncomment to start Wi-Fi access point after stop
+
+@app.route("/")
 def home(request):
     return Response("Hello from MicroWeb!", content_type="text/plain")
 
@@ -40,6 +59,5 @@ def headers_example(request):
     resp.headers["X-Custom-Header"] = "Value"
     return resp
 
+
 app.run()
-
-

@@ -203,10 +203,45 @@ Flash MicroPython firmware and MicroWeb to your device:
 microweb flash --port COM10
 ```
 
-#### Options:
-- `--erase`: Erase the entire flash memory before flashing firmware.
-- `--esp8266`: Flash ESP8266 firmware instead of the default ESP32.
-- `--firmware firmware.bin`: Use a custom `.bin` firmware file, overriding the default firmware for ESP32 or ESP8266.
+#### ⚙️ Options:
+
+* `--port COMx`
+  Specify the serial port to which your ESP device is connected.
+  Example: `--port COM5` (Windows), `--port /dev/ttyUSB0` (Linux/macOS)
+
+* `--erase`
+  Erase the entire flash memory before writing firmware. **Warning:** This will remove all existing data.
+
+* `--esp8266`
+  Flash ESP8266 firmware instead of the default ESP32 firmware.
+
+* `--firmware firmware.bin`
+  Use a custom `.bin` firmware file. Overrides the default firmware path.
+
+* `--baud 460800`
+  Set a custom baud rate for flashing. Defaults to `460800`, but can be changed to `115200`, `921600`, etc.
+
+* `--full-flash`
+  Flash the firmware to address `0x0` (useful for full `.bin` images with bootloader). Default flashing address is `0x1000`.
+
+---
+
+### 📝 Examples:
+
+```bash
+# Flash default ESP32 firmware and MicroWeb files
+microweb flash --port COM10
+
+# Flash custom firmware with erase
+microweb flash --port COM10 --erase --firmware ./firmware/ESP32-C3-20250722-v1.25.1.bin
+
+# Flash at 921600 baud and use full-flash mode (offset 0x0)
+microweb flash --port COM10 --baud 921600 --full-flash --firmware ./firmware/full_image.bin
+
+# Flash ESP8266 device with default firmware
+microweb flash --port COM10 --esp8266
+```
+
 
 ### Running a Custom Application
 Upload and run a MicroPython script:
@@ -296,6 +331,13 @@ Explore how MicroWeb is used in practical applications with minimal setup!
 
 ```python
 from microweb import MicroWeb, Response
+
+#from dotenv import load_dotenv , get_env
+
+# env_vars = load_dotenv()
+# ssid = get_env('SSID', 'MyESP32', env_vars)
+# password = get_env('PASSWORD', 'mypassword', env_vars)
+# db_uri = get_env('DB_URI', None, env_vars)
 
 app = MicroWeb(debug=True, ap={'ssid': 'MyWiFi', 'password': 'MyPassword'})
 

@@ -253,6 +253,21 @@ class MicroWeb:
             return func
         return decorator
     
+    def url_encode(self, s):
+        """Encode a string for safe use in URLs."""
+        safe = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~'
+        result = ''
+        for char in s:
+            if char in safe:
+                result += char
+            else:
+                hex_val = hex(ord(char))[2:].upper()
+                # Ensure two-digit hex by adding leading zero if needed
+                if len(hex_val) == 1:
+                    hex_val = '0' + hex_val
+                result += '%' + hex_val
+        return result
+    
     def add_static(self, path, file_path):
         self.static_files[path] = file_path
     
